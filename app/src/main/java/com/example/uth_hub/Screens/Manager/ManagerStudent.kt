@@ -173,10 +173,10 @@ fun ManagerStudent(navController: NavController){
     }
 
 }
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Uth_hubTheme {
-        ManagerStudent(rememberNavController())
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun GreetingPreview() {
+//    Uth_hubTheme {
+//        ManagerStudent(rememberNavController())
+//    }
+//}
