@@ -120,10 +120,10 @@ fun ManagerProfile(navController: NavController){
     }
 
 }
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Uth_hubTheme {
-        ManagerProfile(rememberNavController())
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun GreetingPreview() {
+//    Uth_hubTheme {
+//        ManagerProfile(rememberNavController())
+//    }
+//}
