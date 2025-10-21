@@ -1,0 +1,31 @@
+package com.example.uth_hub.Navigation
+
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import com.example.uth_hub.Screens.CreatePost
+import com.example.uth_hub.Screens.HomeScreen
+import com.example.uth_hub.Screens.Notification
+import com.example.uth_hub.Screens.Profile.Profile
+
+@Composable
+fun NavGraph(navController : NavHostController,modifier: Modifier = Modifier){
+    NavHost(navController = navController, startDestination = Screen.HomeScreen){
+
+        composable(Screen.HomeScreen) {
+            HomeScreen(navController = navController)
+        }
+        composable(Screen.CreatePost) {
+            CreatePost(navController =navController)
+        }
+        composable(Screen.Notification) {
+            Notification(navController = navController)
+        }
+        composable(Screen.Profile) {
+            Profile(navController = navController)
+        }
+    }
+
+}
