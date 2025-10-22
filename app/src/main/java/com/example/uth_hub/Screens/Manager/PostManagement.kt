@@ -68,7 +68,7 @@ fun PostManagement(navController: NavController){
                     modifier = Modifier,
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFCE2645)
+                        containerColor = ColorCustom.linkPink
                     )){
                         Text(text = "Bị tố cáo", color = Color.White)
                 }
@@ -90,16 +90,16 @@ fun PostManagement(navController: NavController){
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp)){
             items(3){
-              x ->  Post()
+              x ->  PostDetail()
             }
         }
 
     }
 }
-//@Preview(showBackground = true)
-//@Composable
-//fun PostManagementPreview() {
-//    Uth_hubTheme {
-//        PostManagement(rememberNavController())
-//    }
-//}
+@Preview(showBackground = true)
+@Composable
+fun PostManagementPreview() {
+    Uth_hubTheme {
+        PostManagement(rememberNavController())
+    }
+}
