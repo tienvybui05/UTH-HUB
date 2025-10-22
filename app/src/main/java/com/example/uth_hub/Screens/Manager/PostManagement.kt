@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.uth_hub.Screens.Shared.Avartar
+import com.example.uth_hub.Screens.Shared.Post
 import com.example.uth_hub.ui.theme.ColorCustom
 import com.example.uth_hub.ui.theme.Uth_hubTheme
 import compose.icons.FontAwesomeIcons
@@ -47,7 +48,7 @@ import compose.icons.fontawesomeicons.solid.Trash
 fun PostManagement(navController: NavController){
     Column(modifier = Modifier.fillMaxSize().background(color = Color.White),
         horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(modifier = Modifier.fillMaxWidth().padding(5.dp,15.dp),
+        Row(modifier = Modifier.fillMaxWidth().padding(5.dp,20.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically){
             TextButton(onClick = {
@@ -67,7 +68,7 @@ fun PostManagement(navController: NavController){
                     modifier = Modifier,
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFB42A46)
+                        containerColor = Color(0xFFCE2645)
                     )){
                         Text(text = "Bị tố cáo", color = Color.White)
                 }
@@ -85,12 +86,19 @@ fun PostManagement(navController: NavController){
             )){
             Text(text = "--Tất cả khoa--", color = Color.White)
         }
+        LazyColumn(modifier = Modifier.fillMaxWidth().padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)){
+            items(3){
+              x ->  Post()
+            }
+        }
 
     }
 }
 //@Preview(showBackground = true)
 //@Composable
-//fun GreetingPreview() {
+//fun PostManagementPreview() {
 //    Uth_hubTheme {
 //        PostManagement(rememberNavController())
 //    }

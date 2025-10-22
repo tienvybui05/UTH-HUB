@@ -5,4 +5,5 @@ object Screen{
     const val CreatePost ="createpost"
     const val Notification ="notification"
     const val Profile ="profile"
+    const val PostManagement ="postManagement"
 }

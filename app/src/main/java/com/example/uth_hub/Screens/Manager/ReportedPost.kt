@@ -70,10 +70,10 @@ fun ReportedPost(navController: NavController){
 
     }
 }
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Uth_hubTheme {
-        ReportedPost(rememberNavController())
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun GreetingPreview() {
+//    Uth_hubTheme {
+//        ReportedPost(rememberNavController())
+//    }
+//}

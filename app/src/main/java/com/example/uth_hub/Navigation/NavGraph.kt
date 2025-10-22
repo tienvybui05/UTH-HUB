@@ -5,14 +5,16 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.uth_hub.Navigation.Screen.PostManagement
 import com.example.uth_hub.Screens.CreatePost
 import com.example.uth_hub.Screens.HomeScreen
+import com.example.uth_hub.Screens.Manager.PostManagement
 import com.example.uth_hub.Screens.Notification
 import com.example.uth_hub.Screens.Profile.Profile
 
 @Composable
 fun NavGraph(navController : NavHostController,modifier: Modifier = Modifier){
-    NavHost(navController = navController, startDestination = Screen.HomeScreen){
+    NavHost(navController = navController, startDestination = Screen.PostManagement){
 
         composable(Screen.HomeScreen) {
             HomeScreen(navController = navController)
@@ -26,6 +28,10 @@ fun NavGraph(navController : NavHostController,modifier: Modifier = Modifier){
         composable(Screen.Profile) {
             Profile(navController = navController)
         }
+        composable(Screen.PostManagement) {
+            PostManagement(navController = navController)
+        }
+
     }
 
 }
