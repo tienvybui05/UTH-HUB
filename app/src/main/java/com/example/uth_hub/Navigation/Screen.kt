@@ -6,4 +6,7 @@ object Screen{
     const val Notification ="notification"
     const val Profile ="profile"
     const val PostManagement ="postManagement"
+    const val ManagerStudent ="managerStudent"
+    const val ManagerProfile ="managerProfile"
+    const val ReportedPost ="reportedPost"
 }

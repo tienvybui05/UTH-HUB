@@ -27,4 +27,6 @@ object ColorCustom{
     val primaryText = primary
     // text phụ
     val secondText = Color(0xFF000000)
+
+    val linkPink = Color(0xFFEA5D75)
 }
