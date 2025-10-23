@@ -34,45 +34,43 @@ fun CreatePost(navController: NavController) {
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color(0xFF00796B)
-                        )
-                    }
-                },
-                title = {
-                    Text(
-                        text = "Tạo bài viết",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = Color(0xFF00796B)
-                    )
-                },
-                actions = {
-                    TextButton(onClick = {
-                        // 👉 Xử lý khi nhấn "Đăng"
-                    }) {
+            Surface(
+                color = Color.White,
+                shadowElevation = 5.dp // 👈 bóng nhẹ tự nhiên dưới appbar
+            ) {
+                CenterAlignedTopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color(0xFF00796B)
+                            )
+                        }
+                    },
+                    title = {
                         Text(
-                            text = "Đăng",
+                            text = "Tạo bài viết",
+                            fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
-                            color = Color(0xFF00796B),
-                            fontWeight = FontWeight.SemiBold
+                            color = Color(0xFF00796B)
                         )
+                    },
+                    actions = {
+                        TextButton(onClick = { /* xử lý khi nhấn "Đăng" */ }) {
+                            Text(
+                                text = "Đăng",
+                                fontSize = 18.sp,
+                                color = Color(0xFF00796B),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
-                }
-            )
-            Divider(
-                color = Color(0xFF00796B).copy(alpha = 0.4f),
-                thickness = 1.dp
-            )
-
-
+                )
+            } // 👈 Surface đóng ngoặc tại đây
         }
-    ) { padding ->
+    )
+    { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
