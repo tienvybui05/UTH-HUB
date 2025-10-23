@@ -91,7 +91,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         // ========= APP (giữ nguyên của bạn) =========
         composable(Screen.HomeScreen) { HomeScreen(navController = navController) }
         composable(Screen.CreatePost) { CreatePost(navController = navController) }
-        composable(Screen.Notification) { Notification(navController = navController) }
+        composable(Screen.Notification) { NotificationsScreen(navController = navController) }
         composable(Screen.Profile) { Profile(navController = navController) }
         composable(Screen.PostManagement) { PostManagement(navController = navController) }
         composable(Screen.ManagerProfile) { ManagerProfile(navController = navController) }
