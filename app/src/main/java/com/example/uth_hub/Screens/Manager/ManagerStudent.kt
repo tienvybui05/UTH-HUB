@@ -92,32 +92,34 @@ fun ManagerStudent(navController: NavController){
                 )
                 Text("Sinh viên", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = ColorCustom.primary)
             }
-           Row {
-               TextField(
-                   value = textStyeName,
-                   onValueChange = {textStyeName =it},
-                   placeholder = {Text("Tìm kiếm")},
-                   modifier = Modifier.clip(shape = RoundedCornerShape(30.dp)).background(Color.White).padding(top=3.dp, bottom = 3.dp),
-                   colors = TextFieldDefaults.colors(
-                       focusedContainerColor = Color(0xFFFFFFFF),
-                       unfocusedContainerColor = Color(0xFFF8F8F8),
-                   ),
-                   trailingIcon = {
-                       IconButton(onClick = {}) {
-                           Icon(
-                               imageVector = FontAwesomeIcons.Solid.Fingerprint,
-                               contentDescription = "Tìm kiếm",
-                               modifier = Modifier.size(20.dp),
-                               tint = ColorCustom.primary
-                           )
-                       }
-                   }
 
-
-               )
-           }
         }
         Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(color = ColorCustom.primary)){}
+        Row {
+            TextField(
+                value = textStyeName,
+                onValueChange = {textStyeName =it},
+                placeholder = {Text("Tìm kiếm")},
+                modifier = Modifier.clip(shape = RoundedCornerShape(30.dp)).background(Color.White).padding(top=3.dp, bottom = 3.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFFFFFFFF),
+                    unfocusedContainerColor = Color(0xFFF8F8F8),
+                ),
+
+                trailingIcon = {
+                    IconButton(onClick = {}) {
+                        Icon(
+                            imageVector = FontAwesomeIcons.Solid.Fingerprint,
+                            contentDescription = "Tìm kiếm",
+                            modifier = Modifier.size(20.dp),
+                            tint = ColorCustom.primary
+                        )
+                    }
+                }
+
+
+            )
+        }
         LazyColumn {
           items(listStudent){
               item -> Column {
@@ -173,10 +175,10 @@ fun ManagerStudent(navController: NavController){
     }
 
 }
-//@Preview(showBackground = true)
-//@Composable
-//fun GreetingPreview() {
-//    Uth_hubTheme {
-//        ManagerStudent(rememberNavController())
-//    }
-//}
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    Uth_hubTheme {
+        ManagerStudent(rememberNavController())
+    }
+}

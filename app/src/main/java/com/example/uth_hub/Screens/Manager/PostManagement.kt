@@ -63,18 +63,12 @@ fun PostManagement(navController: NavController){
                 Text("Bài viết ", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = ColorCustom.primary)
             }
 
-            Row {
-                Button(onClick = {},
-                    modifier = Modifier,
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = ColorCustom.linkPink
-                    )){
-                        Text(text = "Bị tố cáo", color = Color.White)
-                }
-            }
+
         }
         Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(color = ColorCustom.primary)){}
+        Row(modifier = Modifier.fillMaxWidth().padding(10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically) {
         Button(onClick = {},
             modifier = Modifier.shadow(
                 elevation =8.dp,
@@ -85,6 +79,16 @@ fun PostManagement(navController: NavController){
                 containerColor = ColorCustom.primary
             )){
             Text(text = "--Tất cả khoa--", color = Color.White)
+        }
+
+            Button(onClick = {},
+                modifier = Modifier,
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ColorCustom.linkPink
+                )){
+                Text(text = "Bị tố cáo", color = Color.White)
+            }
         }
         LazyColumn(modifier = Modifier.fillMaxWidth().padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
