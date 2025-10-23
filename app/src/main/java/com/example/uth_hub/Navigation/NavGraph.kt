@@ -97,5 +97,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         composable(Screen.ManagerProfile) { ManagerProfile(navController = navController) }
         composable(Screen.ManagerStudent) { ManagerStudent(navController = navController) }
         composable(Screen.ReportedPost) { ReportedPost(navController = navController) }
+        composable(Screen.ReportedPost) { LikedPostScreen( navController = navController) }
+
     }
 }
