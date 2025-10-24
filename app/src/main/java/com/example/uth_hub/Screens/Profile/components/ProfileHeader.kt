@@ -102,6 +102,7 @@ fun ProfileHeader(
                     containerColor = Color.Transparent, // nền trong suốt
                     contentColor = Color.White          // chữ trắng
                 ),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 modifier = Modifier
                     .weight(1f)
                     .height(36.dp) // chiều cao đều
@@ -109,7 +110,7 @@ fun ProfileHeader(
                 Text(
                     "Chỉnh sửa trang cá nhân",
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
                 )
             }
 
@@ -137,37 +138,37 @@ fun ProfileHeader(
 
 
         // --- Thanh tab “Bài đăng / File phương tiện” ---
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Article,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Bài đăng", color = Color.White, fontSize = 13.sp)
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.Folder,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.7f),
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    "File phương tiện",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 13.sp
-                )
-            }
-        }
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceEvenly,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Row(verticalAlignment = Alignment.CenterVertically) {
+//                Icon(
+//                    imageVector = Icons.Default.Article,
+//                    contentDescription = null,
+//                    tint = Color.White,
+//                    modifier = Modifier.size(18.dp)
+//                )
+//                Spacer(modifier = Modifier.width(4.dp))
+//                Text("Bài đăng", color = Color.White, fontSize = 13.sp)
+//            }
+//
+//            Row(verticalAlignment = Alignment.CenterVertically) {
+//                Icon(
+//                    imageVector = Icons.Default.Folder,
+//                    contentDescription = null,
+//                    tint = Color.White.copy(alpha = 0.7f),
+//                    modifier = Modifier.size(18.dp)
+//                )
+//                Spacer(modifier = Modifier.width(4.dp))
+//                Text(
+//                    "File phương tiện",
+//                    color = Color.White.copy(alpha = 0.7f),
+//                    fontSize = 13.sp
+//                )
+//            }
+//        }
     }
 }
 @Preview(showBackground = true)
