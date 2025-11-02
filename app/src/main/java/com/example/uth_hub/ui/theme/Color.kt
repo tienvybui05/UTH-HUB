@@ -22,7 +22,7 @@ object ColorCustom{
     // màu nền chính
      val primarybackground = Color(0xFFFFFFFF)
     // màu nền phụ
-    val secondBackground = Color(0xFFDCECE9)
+    val secondBackground = Color(0xFFF7FEFE)
 
     val primaryText = primary
     // text phụ

@@ -32,9 +32,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,20 +57,26 @@ fun HomeScreen(navController: NavController){
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Drawer Title", style = MaterialTheme.typography.titleLarge)
-                    HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                    NavigationDrawerItem(
-                        label = { Text("Cài đặt") },
-                        selected = false,
-                        onClick = { /* handle click */ }
-                    )
-                    NavigationDrawerItem(
-                        label = { Text("Trợ giúp") },
-                        selected = false,
-                        onClick = { /* handle click */ }
-                    )
+            ModalDrawerSheet() {
+                Column(modifier = Modifier.background(Color.White)) {
+                    Text("Feed", fontSize = 22.sp, color = ColorCustom.primary, fontWeight = FontWeight.Bold , modifier = Modifier.padding(15.dp))
+                    HorizontalDivider()
+                    Column(modifier = Modifier.weight(1f).background(ColorCustom.primary)) {
+                        Column(modifier = Modifier.padding(16.dp).clip(RoundedCornerShape(8.dp)).background(Color.White)) {
+                            NavigationDrawerItem(
+                                label = { Text("Cài đặt") },
+                                selected = false,
+                                onClick = { /* handle click */ }
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(10.dp,0.dp).background(ColorCustom.primary))
+                            NavigationDrawerItem(
+                                label = { Text("Trợ giúp") },
+                                selected = false,
+                                onClick = { /* handle click */ },
+                            )
+                        }
+                    }
+
                 }
             }
         }
@@ -98,7 +106,7 @@ fun HomeScreen(navController: NavController){
                             }
                         }
                     ) {
-                        Text("☰ Menu", fontSize = 16.sp)
+                        Text("☰", fontSize = 16.sp)
                     }
                     Image(
                         painter = painterResource(id = R.drawable.logouth),
@@ -145,10 +153,10 @@ fun HomeScreen(navController: NavController){
         }
     }
 }
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    Uth_hubTheme {
-        HomeScreen(rememberNavController())
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun HomeScreenPreview() {
+//    Uth_hubTheme {
+//        HomeScreen(rememberNavController())
+//    }
+//}

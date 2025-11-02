@@ -82,7 +82,7 @@ fun PostDetail(){
             "@dat123",
             "Công nghệ thông tin",
             "dat@gmail.com",
-            5,
+            0,
             R.drawable.avartardefault,
             "29/04/2007",
             "Xin chào mọi người" +
@@ -174,11 +174,11 @@ fun PostDetail(){
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .clip(RoundedCornerShape(12.dp)) // bo góc ảnh
-                            .border(
-                                1.dp,
-                                ColorCustom.primary,
-                                RoundedCornerShape(12.dp)
-                            )
+//                            .border(
+//                                1.dp,
+//                                ColorCustom.primary,
+//                                RoundedCornerShape(12.dp)
+//                            )
                             .aspectRatio(1f) // giữ tỷ lệ vuông
                     )
                 }
