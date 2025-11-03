@@ -36,84 +36,69 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.uth_hub.R
 import com.example.uth_hub.core.design.components.Avartar
+import com.example.uth_hub.core.design.components.DrawerMenu
 import com.example.uth_hub.core.design.components.Post
 import com.example.uth_hub.core.design.theme.ColorCustom
 import kotlinx.coroutines.launch
 
 @Composable
-fun HomeScreen(navController: NavController){
+fun HomeScreen(navController: NavController) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet() {
-                Column(modifier = Modifier.background(Color.White)) {
-                    Text("Feed", fontSize = 22.sp, color = ColorCustom.primary, fontWeight = FontWeight.Bold , modifier = Modifier.padding(15.dp))
-                    HorizontalDivider()
-                    Column(modifier = Modifier.weight(1f).background(ColorCustom.primary)) {
-                        Column(modifier = Modifier.padding(16.dp).clip(RoundedCornerShape(8.dp)).background(Color.White)) {
-                            NavigationDrawerItem(
-                                label = { Text("Cài đặt") },
-                                selected = false,
-                                onClick = { /* handle click */ }
-                            )
-                            HorizontalDivider(modifier = Modifier.padding(10.dp,0.dp).background(ColorCustom.primary))
-                            NavigationDrawerItem(
-                                label = { Text("Trợ giúp") },
-                                selected = false,
-                                onClick = { /* handle click */ },
-                            )
-                        }
-                    }
-
-                }
-            }
+            DrawerMenu(
+                onSettingsClick = { /* TODO: Navigate to settings */ },
+                onHelpClick = { /* TODO: Navigate to help */ }
+            )
         }
     ) {
         Column(modifier = Modifier.fillMaxSize().background(color = Color.White)) {
             Column(
-                modifier = Modifier.fillMaxWidth().border(
-                    width = 1.dp,
-                    color = ColorCustom.primary,
-                    shape = RoundedCornerShape(8.dp)
-                ).shadow(
-                    elevation = 8.dp,
-                    shape = RoundedCornerShape(8.dp),
-                ).background(color = Color.White).padding(10.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        width = 1.dp,
+                        color = ColorCustom.primary,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .shadow(
+                        elevation = 8.dp,
+                        shape = RoundedCornerShape(8.dp)
+                    )
+                    .background(color = Color.White)
+                    .padding(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
-                        onClick = {
-                            scope.launch {
-                                drawerState.open()
-                            }
-                        }
+                        onClick = { scope.launch { drawerState.open() } }
                     ) {
                         Text("☰", fontSize = 16.sp)
                     }
                     Image(
                         painter = painterResource(id = R.drawable.logouth),
                         contentDescription = "Logo Uth",
-                        modifier = Modifier.width(250.dp).height(50.dp)
+                        modifier = Modifier.width(200.dp).height(40.dp)
                     )
                     Row {}
-
-
                 }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Avartar(R.drawable.avartardefault)
-                    Column(
-                    ) {
+                    Column {
                         Text(text = "@Buitienvy", fontSize = 16.sp, color = ColorCustom.secondText)
                         Text(
                             text = "Hôm nay có g hót ?",
@@ -124,25 +109,22 @@ fun HomeScreen(navController: NavController){
                     }
                 }
             }
+
             Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
-                Row {
-
-
-                }
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(5) { item ->
+                    items(5) {
                         Post()
                     }
                 }
             }
-
         }
     }
 }
+
 //@Preview(showBackground = true)
 //@Composable
 //fun HomeScreenPreview() {

@@ -34,7 +34,7 @@ data class BottomNavItem(
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
         BottomNavItem(Screen.HomeScreen, "Trang chủ", FontAwesomeIcons.Solid.Home),
-        BottomNavItem(Screen.CreatePost, "Thêm bài viết", FontAwesomeIcons.Solid.Plus),
+        BottomNavItem(Screen.CreatePost, "Bài viết", FontAwesomeIcons.Solid.Plus),
         BottomNavItem(Screen.Notification, "Thông báo", FontAwesomeIcons.Solid.Bell),
         BottomNavItem(Screen.Profile, "Cá nhân", FontAwesomeIcons.Solid.UserCircle),
     )
@@ -67,7 +67,7 @@ fun BottomNavigationBar(navController: NavController) {
                         Icon(
                             imageVector = item.icon,
                             contentDescription = item.title,
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(20.dp),
                             tint = ColorCustom.primary
                         )
                     },

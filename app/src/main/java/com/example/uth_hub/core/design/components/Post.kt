@@ -108,7 +108,7 @@ fun Post(){
             Icon(imageVector = Icons.Outlined.MoreVert,
                 contentDescription = "Menu",
                 tint = ColorCustom.secondText,
-                modifier = Modifier.clickable{
+                modifier = Modifier.size(20.dp).clickable{
                     expanded = true
                 })
             DropdownMenu(
