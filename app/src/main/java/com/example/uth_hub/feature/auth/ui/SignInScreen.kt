@@ -22,14 +22,38 @@ import com.example.uth_hub.feature.auth.ui.component.PasswordField
 import com.example.uth_hub.feature.auth.ui.component.PrimaryButton
 import com.example.uth_hub.feature.auth.ui.component.TextLinkButton
 import com.example.uth_hub.feature.auth.viewmodel.SignInViewModel
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import com.google.firebase.auth.FirebaseAuth
+
 
 @Composable
 fun SignInScreen(
     onLoginSuccess: () -> Unit,
     onSignupClick: () -> Unit,
     onForgotClick: () -> Unit,
+    onNewUserFromGoogle: (emailFromGoogle: String) -> Unit, // điều hướng sang CompleteProfile
     vm: SignInViewModel = viewModel()
 ) {
+    // launcher nhận kết quả Google
+    val context = LocalContext.current
+    val googleClient = remember { vm.googleClient(context) }
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { res ->
+        vm.handleGoogleResult(
+            data = res.data,
+            context = context,
+            onNewUser = {
+                val email = FirebaseAuth.getInstance().currentUser?.email ?: ""
+                onNewUserFromGoogle(email)
+            },
+            onSuccess = onLoginSuccess
+        )
+    }
     // nền ảnh toàn màn
     Box(modifier = Modifier.fillMaxSize()) {
         AuthBackground()
@@ -72,8 +96,8 @@ fun SignInScreen(
                     )
                     Spacer(Modifier.height(16.dp))
 
-                    EmailField(email = vm.email.value, onValueChange = { vm.email.value = it })
-                    Spacer(Modifier.height(10.dp))
+                    // EmailField(email = vm.email.value, ...)
+                    EmailField(email = vm.emailOrMssv.value, onValueChange = { vm.emailOrMssv.value = it })
                     PasswordField(password = vm.password.value, onValueChange = { vm.password.value = it })
 
                     // Forgot Password? căn giữa
@@ -92,6 +116,12 @@ fun SignInScreen(
                 vm.onLoginClick(onLoginSuccess)
             }
 
+            // nút "Continue with Google"
+            Spacer(Modifier.height(10.dp))
+            PrimaryButton(text = "Continue with Google") {
+                launcher.launch(googleClient.signInIntent)
+            }
+
             // Hàng SIGN UP dưới nút
             Spacer(Modifier.height(12.dp))
             Row(
@@ -100,6 +130,11 @@ fun SignInScreen(
             ) {
                 Text("Don't have an account? ")
                 TextLinkButton("SIGN UP") { onSignupClick() }
+            }
+
+            // Hiển thị message lỗi nếu có
+            vm.message.value?.let { msg ->
+                Spacer(Modifier.height(8.dp)); Text(msg, color = ColorCustom.primaryText)
             }
         }
     }
@@ -119,5 +154,4 @@ private fun AuthBackground() {
 @Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun PreviewSignInScreen() {
-    SignInScreen(onLoginSuccess = {}, onSignupClick = {}, onForgotClick = {})
 }

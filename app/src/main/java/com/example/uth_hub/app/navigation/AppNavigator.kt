@@ -22,6 +22,7 @@ import com.example.uth_hub.feature.post.ui.CreatePost
 import com.example.uth_hub.feature.post.ui.HomeScreen
 import com.example.uth_hub.feature.post.ui.LikedPostScreen
 import com.example.uth_hub.feature.post.ui.SavePostScreen
+import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -33,6 +34,8 @@ object AuthRoutes {
     const val Forgot = "auth/forgot"
     const val OtpReset = "auth/otp_reset"            // + /{email}
     const val Reset = "auth/reset"                   // + /{email}
+    const val CompleteProfile = "auth/complete_profile" // + /{email}
+
 }
 
 @Composable
@@ -50,11 +53,22 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         }
         composable(AuthRoutes.SignIn) {
             SignInScreen(
-                onLoginSuccess = { navController.navigate(Screen.HomeScreen) { popUpTo(AuthRoutes.SignIn) { inclusive = true } } },
+                onLoginSuccess = {
+                    navController.navigate(Routes.HomeScreen) {
+                        popUpTo(AuthRoutes.SignIn) { inclusive = true }
+                    }
+                },
                 onSignupClick = { navController.navigate(AuthRoutes.SignUp) },
-                onForgotClick = { navController.navigate(AuthRoutes.Forgot) }
+                onForgotClick = { navController.navigate(AuthRoutes.Forgot) },
+
+                // 👇 mới: khi đăng nhập Google là user mới → sang CompleteProfile
+                onNewUserFromGoogle = { email ->
+                    val e = URLEncoder.encode(email, StandardCharsets.UTF_8.toString())
+                    navController.navigate("${AuthRoutes.CompleteProfile}/$e")
+                }
             )
         }
+
         composable(AuthRoutes.SignUp) {
             SignUpScreen(
                 onSendOtp = { email ->
@@ -97,18 +111,35 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 }
             )
         }
+        composable("${AuthRoutes.CompleteProfile}/{email}") { backStack ->
+            val encoded = backStack.arguments?.getString("email") ?: ""
+            val email = URLDecoder.decode(encoded, StandardCharsets.UTF_8.toString())
+
+            com.example.uth_hub.feature.auth.ui.CompleteProfileScreen(
+                emailDefault = email,
+                onCompleted = {
+                    // Vào Home và xoá toàn bộ stack Auth (Splash, SignIn, CompleteProfile)
+                    navController.navigate(Routes.HomeScreen) {
+                        popUpTo(AuthRoutes.Splash) { inclusive = true }
+                    }
+                }
+            )
+        }
 
         // ========= APP (giữ nguyên của bạn) =========
-        composable(Screen.HomeScreen) { HomeScreen(navController = navController) }
-        composable(Screen.CreatePost) { CreatePost(navController = navController) }
-        composable(Screen.Notification) { NotificationsScreen(navController = navController) }
-        composable(Screen.Profile) { Profile(navController = navController) }
-        composable(Screen.PostManagement) { PostManagement(navController = navController) }
-        composable(Screen.ManagerProfile) { ManagerProfile(navController = navController) }
-        composable(Screen.ManagerStudent) { ManagerStudent(navController = navController) }
-        composable(Screen.ReportedPost) { ReportedPost(navController = navController) }
-        composable(Screen.ReportedPost) { LikedPostScreen(navController = navController) }
-        composable(Screen.ReportedPost) { SavePostScreen(navController = navController) }
+        composable(Routes.HomeScreen) { HomeScreen(navController) }
+        composable(Routes.CreatePost) { CreatePost(navController) }
+        composable(Routes.Notification) { NotificationsScreen(navController) }
+        composable(Routes.Profile) { Profile(navController) }
+        composable(Routes.PostManagement) { PostManagement(navController) }
+        composable(Routes.ManagerProfile) { ManagerProfile(navController) }
+        composable(Routes.ManagerStudent) { ManagerStudent(navController) }
+        composable(Routes.ReportedPost) { ReportedPost(navController) }
+
+//  dùng đúng route, tránh lặp ReportedPost
+        composable(Routes.LikedPost) { LikedPostScreen(navController) }
+        composable(Routes.SavedPost) { SavePostScreen(navController) }
+
 
     }
 }

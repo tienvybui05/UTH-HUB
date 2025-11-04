@@ -1,5 +1,6 @@
 [versions]
 agp = "8.13.0"
+fontAwesome = "1.1.1"
 kotlin = "2.0.21"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -9,8 +10,20 @@ lifecycleRuntimeKtx = "2.9.4"
 activityCompose = "1.11.0"
 composeBom = "2024.09.00"
 
+# --- Firebase ---
+firebase-bom = "33.6.0"          # BoM đồng bộ tất cả SDK Firebase
+google-services = "4.4.2"        # Google Services Gradle plugin
+firebase-crashlytics-plugin = "3.0.2"
+firebase-perf-plugin = "1.4.2"
+navigationCompose = "2.9.5"
+playServicesAuth = "21.4.0"
+foundationLayout = "1.9.4"
+
 [libraries]
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+font-awesome = { module = "br.com.devsrsouza.compose.icons:font-awesome", version.ref = "fontAwesome" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -25,8 +38,35 @@ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 
+# --- Firebase libraries (theo BoM, KHÔNG cần version riêng) ---
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics-ktx" }
+firebase-auth = { module = "com.google.firebase:firebase-auth-ktx" }
+firebase-firestore = { module = "com.google.firebase:firebase-firestore-ktx" }
+firebase-database = { module = "com.google.firebase:firebase-database-ktx" }
+firebase-storage = { module = "com.google.firebase:firebase-storage-ktx" }
+firebase-messaging = { module = "com.google.firebase:firebase-messaging-ktx" }
+firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics-ktx" }
+firebase-perf = { module = "com.google.firebase:firebase-perf-ktx" }
+firebase-config = { module = "com.google.firebase:firebase-config-ktx" }
+firebase-dynamic-links = { module = "com.google.firebase:firebase-dynamic-links-ktx" }
+firebase-appcheck = { module = "com.google.firebase:firebase-appcheck-ktx" }
+firebase-appcheck-playintegrity = { module = "com.google.firebase:firebase-appcheck-playintegrity" }
+firebase-appcheck-debug = { module = "com.google.firebase:firebase-appcheck-debug" }
+firebase-functions = { module = "com.google.firebase:firebase-functions-ktx" }
+firebase-installations = { module = "com.google.firebase:firebase-installations-ktx" }
+firebase-inappmessaging = { module = "com.google.firebase:firebase-inappmessaging-ktx" }
+firebase-inappmessaging-display = { module = "com.google.firebase:firebase-inappmessaging-display-ktx" }
+firebase-ml-modeldownloader = { module = "com.google.firebase:firebase-ml-modeldownloader-ktx" }
+play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
+# --- Firebase / Google Services plugins ---
+google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebase-crashlytics-plugin" }
+firebase-perf = { id = "com.google.firebase.firebase-perf", version.ref = "firebase-perf-plugin" }

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "498301654043",
+    "project_id": "uth-hub-49b77",
+    "storage_bucket": "uth-hub-49b77.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:498301654043:android:a6c318a6e379f7e83854be",
+        "android_client_info": {
+          "package_name": "com.example.uth_hub"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "498301654043-gbpqlnl1o752tvfieo29ks82d3e22opd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.uth_hub",
+            "certificate_hash": "efb898c72d287637db3bad6dc2925dba1b3b38ec"
+          }
+        },
+        {
+          "client_id": "498301654043-ur4dpcpl0r9mg84f5g4rphouu3d8bikg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_7XxNJ7_pGaAy5NTA8WgFYuvPdw4RaB4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "498301654043-ur4dpcpl0r9mg84f5g4rphouu3d8bikg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

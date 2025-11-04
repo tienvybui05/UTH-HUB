@@ -33,10 +33,10 @@ data class BottomNavItem(
 @Composable
 fun BottomNavigationBar(navController: NavController) {
     val items = listOf(
-        BottomNavItem(Screen.HomeScreen, "Trang chủ", FontAwesomeIcons.Solid.Home),
-        BottomNavItem(Screen.CreatePost, "Bài viết", FontAwesomeIcons.Solid.Plus),
-        BottomNavItem(Screen.Notification, "Thông báo", FontAwesomeIcons.Solid.Bell),
-        BottomNavItem(Screen.Profile, "Cá nhân", FontAwesomeIcons.Solid.UserCircle),
+        BottomNavItem(Routes.HomeScreen, "Trang chủ", FontAwesomeIcons.Solid.Home),
+        BottomNavItem(Routes.CreatePost, "Bài viết", FontAwesomeIcons.Solid.Plus),
+        BottomNavItem(Routes.Notification, "Thông báo", FontAwesomeIcons.Solid.Bell),
+        BottomNavItem(Routes.Profile, "Cá nhân", FontAwesomeIcons.Solid.UserCircle),
     )
 
     Surface(
@@ -58,7 +58,7 @@ fun BottomNavigationBar(navController: NavController) {
                     onClick = {
                         if (currentRoute != item.route) {
                             navController.navigate(item.route) {
-                                popUpTo(Screen.HomeScreen)
+                                popUpTo(Routes.HomeScreen)
                                 launchSingleTop = true
                             }
                         }
