@@ -50,12 +50,19 @@ fun Profile(navController: NavController) {
                 )
             }
 
-            // --- Tab bar ---
-            item {
-                ProfileTabBar(
-                    selectedTabIndex = selectedTabIndex,
-                    onTabSelected = { selectedTabIndex = it }
-                )
+            // --- Sticky TabBar ---
+            stickyHeader {
+                // Phải có nền để khi dính lên top không bị xuyên nền
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF008689))
+                ) {
+                    ProfileTabBar(
+                        selectedTabIndex = selectedTabIndex,
+                        onTabSelected = { selectedTabIndex = it }
+                    )
+                }
             }
 
             // --- Nội dung theo tab ---
@@ -63,7 +70,7 @@ fun Profile(navController: NavController) {
 
             // các bài đăng, ảnh, ... cách nhau 10dp
             when (selectedTabIndex) {
-                0 -> items(5) { index ->
+                0 -> items(15) { index ->
                     // 🔹 Bọc mỗi Post trong padding ngang
                     Box(
                         modifier = Modifier
@@ -76,7 +83,7 @@ fun Profile(navController: NavController) {
                     if (index != 4) Spacer(modifier = Modifier.height(10.dp))
                 }
 
-                1 -> items(6) { index ->
+                1 -> items(20) { index ->
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
