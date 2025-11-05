@@ -2,7 +2,7 @@ package com.example.uth_hub.feature.profile.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Folder
@@ -29,23 +29,28 @@ fun ProfileTabBar(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .background(Color(0xFF176569)) // nền xanh ngọc
             .padding(horizontal = 8.dp)
     ) {
         TabRow(
             selectedTabIndex = selectedTabIndex,
             containerColor = Color.Transparent,
             contentColor = Color.White,
+            // 🔹 Custom indicator trắng tinh, dài bằng 1/2 tab
             indicator = { tabPositions ->
-                TabRowDefaults.Indicator(
-                    Modifier
-                        .tabIndicatorOffset(tabPositions[selectedTabIndex])
-                        .height(3.dp)
-                        .padding(horizontal = 40.dp)
-                        .clip(MaterialTheme.shapes.medium)
+                val currentTab = tabPositions[selectedTabIndex]
+                Box(
+                    modifier = Modifier
+                        .tabIndicatorOffset(currentTab)
+                        .width(currentTab.width / 2)
+                        .height(4.dp)
+                        .offset(y = (-7).dp)
+                        .align(Alignment.CenterHorizontally)
+                        .clip(RoundedCornerShape(50))
                         .background(Color.White)
                 )
             },
-            divider = {} // Bỏ gạch chia mặc định
+            divider = {}
         ) {
             tabs.forEachIndexed { index, title ->
                 Tab(

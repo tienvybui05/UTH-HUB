@@ -16,7 +16,6 @@ import com.example.uth_hub.app.navigation.BottomNavigationBar
 import com.example.uth_hub.feature.profile.ui.components.ProfileHeader
 import com.example.uth_hub.feature.profile.ui.components.TopBarSimple
 import com.example.uth_hub.core.design.components.Post
-import com.example.uth_hub.feature.profile.ui.components.ProfileBackground
 import com.example.uth_hub.feature.profile.ui.components.ProfileTabBar
 
 @Composable
@@ -24,74 +23,81 @@ fun Profile(navController: NavController) {
     var selectedTabIndex by remember { mutableStateOf(0) }
 
     Scaffold(
-        topBar = { TopBarSimple(onBackClick = { /* TODO */ }, onMenuClick = { /* TODO */ }) },
+        topBar = {
+            TopBarSimple(
+                onBackClick = { /* TODO */ },
+                onMenuClick = { /* TODO */ },
+            )
+        },
         bottomBar = { BottomNavigationBar(navController) },
     ) { innerPadding ->
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Nền
-            ProfileBackground()
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(innerPadding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                // Header
-                item {
-                    ProfileHeader(
-                        name = "Đạt Vỹ Lượng",
-                        username = "anhdeptraio4",
-                        major = "Viện CNTT & Điện, điện tử",
-                        code = "CN2301C",
-                        onEditClick = {},
-                        onShareClick = {}
-                    )
-                }
-
-                // Thanh tab
-                item {
-                    ProfileTabBar(
-                        selectedTabIndex = selectedTabIndex,
-                        onTabSelected = { selectedTabIndex = it }
-                    )
-                }
-
-                // Hiển thị nội dung theo tab
-                when (selectedTabIndex) {
-                    0 -> { // Tab Bài đăng
-                        items(5) {
-                            Post()
-                        }
-                    }
-
-                    1 -> { // Tab File phương tiện
-                        items(6) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(150.dp)
-                                    .background(Color(0x22FFFFFF))
-                                    .padding(8.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "🖼 Ảnh / Video ${it + 1}",
-                                    color = Color.White
-                                )
-                            }
-                        }
-                    }
-                }
-
-                item { Spacer(modifier = Modifier.height(60.dp)) }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // --- Header (gộp nền vào bên trong) ---
+            item {
+                ProfileHeader(
+                    name = "Đạt Vỹ Lượng",
+                    username = "anhdeptraio4",
+                    major = "Viện CNTT & Điện, điện tử",
+                    code = "CN2301C",
+                    onEditClick = {},
+                    onShareClick = {}
+                )
             }
+
+            // --- Tab bar ---
+            item {
+                ProfileTabBar(
+                    selectedTabIndex = selectedTabIndex,
+                    onTabSelected = { selectedTabIndex = it }
+                )
+            }
+
+            // --- Nội dung theo tab ---
+            item { Spacer(modifier = Modifier.height(10.dp)) }
+
+            // các bài đăng, ảnh, ... cách nhau 10dp
+            when (selectedTabIndex) {
+                0 -> items(5) { index ->
+                    // 🔹 Bọc mỗi Post trong padding ngang
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp) // ✅ padding 2 bên
+                    ) {
+                        Post()
+                    }
+
+                    if (index != 4) Spacer(modifier = Modifier.height(10.dp))
+                }
+
+                1 -> items(6) { index ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp) // ✅ padding 2 bên
+                            .height(150.dp)
+                            .background(Color(0x22FFFFFF))
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("🖼 Ảnh / Video ${index + 1}", color = Color.White)
+                    }
+
+                    if (index != 5) Spacer(modifier = Modifier.height(10.dp))
+                }
+            }
+
+
+            item { Spacer(modifier = Modifier.height(60.dp)) }
         }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable

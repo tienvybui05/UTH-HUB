@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 fun TopBarSimple(
     onBackClick: () -> Unit = {},
     onMenuClick: () -> Unit = {},
-    backgroundColor: Color = Color.Transparent //  nền trong suốt
+    backgroundColor: Color = Color(0xFF176569) // ✅ đổi nền topbar
 ) {
     Row(
         modifier = Modifier
@@ -52,4 +52,3 @@ fun TopBarSimple(
 fun PreviewTopBarSimple() {
     TopBarSimple()
 }
-
