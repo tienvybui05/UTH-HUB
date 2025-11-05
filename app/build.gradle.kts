@@ -117,4 +117,8 @@ dependencies {
     // Crashlytics & Performance
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.perf)
+
+    // Coil
+    implementation(libs.coil.compose)
+
 }

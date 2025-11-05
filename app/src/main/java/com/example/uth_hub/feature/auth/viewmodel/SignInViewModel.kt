@@ -8,9 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.uth_hub.feature.auth.AuthConst
 import com.example.uth_hub.feature.auth.data.AuthRepository
 import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.*
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 
@@ -20,54 +19,82 @@ class SignInViewModel : ViewModel() {
     var emailOrMssv = mutableStateOf("")
     var password = mutableStateOf("")
     var isLoading = mutableStateOf(false)
-    var message = mutableStateOf<String?>(null)
+
+    // 👇 lỗi theo từng ô + lỗi chung
+    var idError = mutableStateOf<String?>(null)      // cho ô MSSV/Email
+    var passError = mutableStateOf<String?>(null)    // cho ô Password
+    var message = mutableStateOf<String?>(null)      // lỗi chung (toast/ dưới nút)
 
     fun onLoginClick(onSuccess: () -> Unit) = viewModelScope.launch {
+        // reset lỗi cũ
+        idError.value = null
+        passError.value = null
+        message.value = null
+
         val id = emailOrMssv.value.trim()
         val pass = password.value
-        if (id.isBlank() || pass.isBlank()) {
-            message.value = "Vui lòng nhập đủ thông tin"
-            return@launch
-        }
+
+        // validate rỗng
+        var hasErr = false
+        if (id.isBlank()) { idError.value = "Tài khoản đăng nhập là bắt buộc"; hasErr = true }
+        if (pass.isBlank()) { passError.value = "Mật khẩu là bắt buộc"; hasErr = true }
+        if (hasErr) return@launch
+
         isLoading.value = true
         try {
             if (id.contains("@")) {
-                require(id.endsWith(AuthConst.UTH_DOMAIN)) {
-                    "Email phải là mail trường (${AuthConst.UTH_DOMAIN})"
+                // nhập email
+                if (!id.endsWith(AuthConst.UTH_DOMAIN)) {
+                    idError.value = "Chỉ chấp nhận email ${AuthConst.UTH_DOMAIN}"
+                    return@launch
                 }
                 repo.signInByEmail(id, pass)
             } else {
+                // nhập MSSV
                 repo.signInByMssv(id, pass)
             }
             onSuccess()
         } catch (e: Exception) {
-            message.value = e.message
-        } finally { isLoading.value = false }
+            when (e) {
+                // sai mật khẩu
+                is FirebaseAuthInvalidCredentialsException -> {
+                    passError.value = "Mật khẩu không đúng"
+                }
+                // user không tồn tại / email chưa đăng ký
+                is FirebaseAuthInvalidUserException -> {
+                    idError.value = "Tài khoản không tồn tại"
+                }
+                // từ Repository: MSSV không tồn tại, domain sai, v.v.
+                is IllegalArgumentException -> {
+                    idError.value = e.message
+                }
+                else -> {
+                    message.value = e.message ?: "Đăng nhập thất bại, thử lại sau"
+                }
+            }
+        } finally {
+            isLoading.value = false
+        }
     }
 
-    /** Google client cho Compose screen dùng */
     fun googleClient(context: Context) = repo.buildGoogleClient(context)
 
-    /** Xử lý kết quả Google Sign-In */
     fun handleGoogleResult(
         data: Intent?,
-        context: Context,              // 👈 truyền từ UI vào
+        context: Context,
         onNewUser: () -> Unit,
         onSuccess: () -> Unit
     ) = viewModelScope.launch {
         try {
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
             val account = task.getResult(ApiException::class.java)
-
             val email = account.email.orEmpty()
             if (!email.endsWith(AuthConst.UTH_DOMAIN)) {
-                // Chặn ngay trên client
                 FirebaseAuth.getInstance().signOut()
-                repo.buildGoogleClient(context).signOut() // ép chọn lại tài khoản lần sau
+                repo.buildGoogleClient(context).signOut()
                 message.value = "Chỉ chấp nhận email ${AuthConst.UTH_DOMAIN}"
                 return@launch
             }
-
             isLoading.value = true
             val (isNew, _) = repo.signInWithGoogle(account)
             if (isNew) onNewUser() else onSuccess()

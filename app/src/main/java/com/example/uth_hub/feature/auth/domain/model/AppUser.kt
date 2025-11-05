@@ -7,5 +7,7 @@ data class AppUser(
     val photoUrl: String? = null,
     val mssv: String? = null,
     val phone: String? = null,
+    val institute: String? = null,
+    val classCode: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 )

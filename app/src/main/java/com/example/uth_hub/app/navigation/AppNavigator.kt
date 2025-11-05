@@ -11,7 +11,6 @@ import com.example.uth_hub.feature.admin.ui.PostManagement
 import com.example.uth_hub.feature.admin.ui.ReportedPost
 import com.example.uth_hub.feature.auth.ui.ForgotPasswordScreen
 import com.example.uth_hub.feature.auth.ui.OtpResetScreen
-import com.example.uth_hub.feature.auth.ui.OtpSignupScreen
 import com.example.uth_hub.feature.auth.ui.ResetPasswordScreen
 import com.example.uth_hub.feature.auth.ui.SignInScreen
 import com.example.uth_hub.feature.auth.ui.SignUpScreen
@@ -30,27 +29,33 @@ object AuthRoutes {
     const val Splash = "auth/splash"
     const val SignIn = "auth/signin"
     const val SignUp = "auth/signup"
-    const val OtpSignup = "auth/otp_signup"          // + /{email}
+
+    // Forgot/Reset cho flow quên mật khẩu
     const val Forgot = "auth/forgot"
     const val OtpReset = "auth/otp_reset"            // + /{email}
     const val Reset = "auth/reset"                   // + /{email}
-    const val CompleteProfile = "auth/complete_profile" // + /{email}
 
+    // SignUp → CompleteProfile
+    const val CompleteProfile = "auth/complete_profile" // + /{email}
 }
 
 @Composable
 fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     NavHost(
         navController = navController,
-        // nếu muốn vào thẳng Home thì đổi lại Screen.HomeScreen
         startDestination = AuthRoutes.Splash
     ) {
         // ========= AUTH =========
         composable(AuthRoutes.Splash) {
             SplashScreen(
-                onFinish = { navController.navigate(AuthRoutes.SignIn) { popUpTo(AuthRoutes.Splash) { inclusive = true } } }
+                onFinish = {
+                    navController.navigate(AuthRoutes.SignIn) {
+                        popUpTo(AuthRoutes.Splash) { inclusive = true }
+                    }
+                }
             )
         }
+
         composable(AuthRoutes.SignIn) {
             SignInScreen(
                 onLoginSuccess = {
@@ -61,7 +66,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 onSignupClick = { navController.navigate(AuthRoutes.SignUp) },
                 onForgotClick = { navController.navigate(AuthRoutes.Forgot) },
 
-                // 👇 mới: khi đăng nhập Google là user mới → sang CompleteProfile
+                // User đăng nhập bằng Google lần đầu → sang CompleteProfile
                 onNewUserFromGoogle = { email ->
                     val e = URLEncoder.encode(email, StandardCharsets.UTF_8.toString())
                     navController.navigate("${AuthRoutes.CompleteProfile}/$e")
@@ -69,22 +74,34 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             )
         }
 
+        //  SignUp: chỉ Google → CompleteProfile / quay về SignIn
         composable(AuthRoutes.SignUp) {
             SignUpScreen(
-                onSendOtp = { email ->
+                onGoToCompleteProfile = { email ->
                     val e = URLEncoder.encode(email, StandardCharsets.UTF_8.toString())
-                    navController.navigate("${AuthRoutes.OtpSignup}/$e")
+                    navController.navigate("${AuthRoutes.CompleteProfile}/$e")
                 },
-                onSignInClick = { navController.popBackStack() }
+                onGoToSignIn = { navController.popBackStack() }
             )
         }
-        composable("${AuthRoutes.OtpSignup}/{email}") { backStack ->
-            val email = backStack.arguments?.getString("email") ?: ""
-            OtpSignupScreen(
-                email = email,
-                onVerified = { navController.navigate(AuthRoutes.SignIn) { popUpTo(AuthRoutes.SignIn) { inclusive = true } } }
+
+        // Nhận email từ Google và hoàn tất hồ sơ
+        composable("${AuthRoutes.CompleteProfile}/{email}") { backStack ->
+            val encoded = backStack.arguments?.getString("email") ?: ""
+            val email = URLDecoder.decode(encoded, StandardCharsets.UTF_8.toString())
+
+            com.example.uth_hub.feature.auth.ui.CompleteProfileScreen(
+                emailDefault = email,
+                onCompleted = {
+                    // Vào Home và xoá toàn bộ stack Auth (Splash, SignIn, CompleteProfile)
+                    navController.navigate(Routes.HomeScreen) {
+                        popUpTo(AuthRoutes.Splash) { inclusive = true }
+                    }
+                }
             )
         }
+
+        // ( flow quên mật khẩu)
         composable(AuthRoutes.Forgot) {
             ForgotPasswordScreen(
                 onOtpSent = { email ->
@@ -111,22 +128,8 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 }
             )
         }
-        composable("${AuthRoutes.CompleteProfile}/{email}") { backStack ->
-            val encoded = backStack.arguments?.getString("email") ?: ""
-            val email = URLDecoder.decode(encoded, StandardCharsets.UTF_8.toString())
 
-            com.example.uth_hub.feature.auth.ui.CompleteProfileScreen(
-                emailDefault = email,
-                onCompleted = {
-                    // Vào Home và xoá toàn bộ stack Auth (Splash, SignIn, CompleteProfile)
-                    navController.navigate(Routes.HomeScreen) {
-                        popUpTo(AuthRoutes.Splash) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        // ========= APP (giữ nguyên của bạn) =========
+        // ========= APP =========
         composable(Routes.HomeScreen) { HomeScreen(navController) }
         composable(Routes.CreatePost) { CreatePost(navController) }
         composable(Routes.Notification) { NotificationsScreen(navController) }
@@ -136,10 +139,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         composable(Routes.ManagerStudent) { ManagerStudent(navController) }
         composable(Routes.ReportedPost) { ReportedPost(navController) }
 
-//  dùng đúng route, tránh lặp ReportedPost
         composable(Routes.LikedPost) { LikedPostScreen(navController) }
         composable(Routes.SavedPost) { SavePostScreen(navController) }
-
-
     }
 }

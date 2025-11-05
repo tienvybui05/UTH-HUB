@@ -69,12 +69,25 @@ class AuthRepository(
     }
 
     /** Cập nhật MSSV/phone vào hồ sơ + index MSSV */
-    suspend fun completeProfile(uid: String, mssv: String, phone: String) {
+    suspend fun completeProfile(
+        uid: String,
+        mssv: String,
+        phone: String,
+        institute: String,
+        classCode: String
+    ) {
         val ref = db.collection(AuthConst.USERS).document(uid)
         ref.update(
-            mapOf("mssv" to mssv, "phone" to phone, "updatedAt" to FieldValue.serverTimestamp())
+            mapOf(
+                "mssv" to mssv,
+                "phone" to phone,
+                "institute" to institute,
+                "classCode" to classCode,
+                "updatedAt" to FieldValue.serverTimestamp()
+            )
         ).await()
     }
+
 
     /** Đăng nhập bằng MSSV + password: tra email rồi signInWithEmailAndPassword */
     suspend fun signInByMssv(mssv: String, password: String) {
