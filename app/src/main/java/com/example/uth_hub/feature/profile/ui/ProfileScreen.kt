@@ -16,27 +16,42 @@ import androidx.navigation.compose.rememberNavController
 import com.example.uth_hub.app.navigation.BottomNavigationBar
 import com.example.uth_hub.feature.profile.ui.components.ProfileHeader
 import com.example.uth_hub.feature.profile.ui.components.ProfileTabBar
+import com.example.uth_hub.feature.profile.ui.components.SettingsSheet
 import com.example.uth_hub.feature.profile.ui.components.TopBarSimple
 import com.example.uth_hub.feature.profile.viewmodel.ProfileViewModel
 
 @Composable
 fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
     var selectedTabIndex by remember { mutableStateOf(0) }
+    var showSettings by remember { mutableStateOf(false) }   // 👈 state mở sheet
     val ui = vm.ui.collectAsState().value
 
     Scaffold(
         topBar = {
             TopBarSimple(
                 onBackClick = { navController.navigateUp() },
-                onMenuClick = {
-                    // ví dụ: đăng xuất & quay về SignIn
-                    vm.signOut()
-                    navController.popBackStack(route = "auth/signin", inclusive = false)
-                },
+                onMenuClick = { showSettings = true }          // 👈 mở sheet
             )
         },
-        bottomBar = { BottomNavigationBar(navController) },
+        // Nếu đã chuyển BottomBar lên AppNavigator, hãy xoá dòng dưới:
+        // bottomBar = { BottomNavigationBar(navController) },
     ) { innerPadding ->
+
+        // *** SHEET CÀI ĐẶT ***
+        if (showSettings) {
+            SettingsSheet(
+                onDismissRequest = { showSettings = false },
+                onLogout = {
+                    showSettings = false
+                    vm.signOut()
+                    // quay về màn đăng nhập & xoá backstack
+                    navController.navigate(com.example.uth_hub.app.navigation.AuthRoutes.SignIn) {
+                        popUpTo(0)
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
 
         if (ui.loading) {
             Box(Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
@@ -58,8 +73,8 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                     username = user?.mssv ?: "—",
                     major = user?.institute ?: "—",
                     code = user?.classCode ?: "—",
-                    avatarUrl = user?.photoUrl,   // nếu ProfileHeader hỗ trợ url, truyền vào
-                    onEditClick = { /* TODO: mở màn edit info sau */ },
+                    avatarUrl = user?.photoUrl,
+                    onEditClick = { /* TODO */ },
                     onShareClick = { /* TODO */ }
                 )
             }
@@ -79,25 +94,14 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
 
             item { Spacer(Modifier.height(10.dp)) }
 
-            // Chưa làm phần Post nên tạm để khối trống thân thiện
             when (selectedTabIndex) {
                 0 -> item {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Chưa có bài viết", color = Color.White)
                     }
                 }
                 1 -> item {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Chưa có ảnh/video", color = Color.White)
                     }
                 }

@@ -96,9 +96,6 @@ dependencies {
     // Remote Config
     implementation(libs.firebase.config)
 
-    // Dynamic Links
-    implementation(libs.firebase.dynamic.links)
-
     // App Check (Play Integrity + Debug build)
     implementation(libs.firebase.appcheck)
     implementation(libs.firebase.appcheck.playintegrity)

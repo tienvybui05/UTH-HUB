@@ -6,9 +6,7 @@ import com.example.uth_hub.feature.auth.domain.model.AppUser
 import com.example.uth_hub.feature.profile.data.ProfileRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 data class ProfileUiState(
@@ -20,16 +18,19 @@ data class ProfileUiState(
 class ProfileViewModel : ViewModel() {
     private val repo = ProfileRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
-    private val _ui = MutableStateFlow(ProfileUiState())
-    val ui: StateFlow<ProfileUiState> = _ui.asStateFlow()
+    // Tối ưu: dùng stateIn
+    val ui: StateFlow<ProfileUiState> =
+        repo.currentUserFlow() // Flow<AppUser?>
+            .map { user -> ProfileUiState(loading = false, user = user, error = null) }
+            .catch { e -> emit(ProfileUiState(loading = false, user = null, error = e.message)) }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = ProfileUiState(loading = true)
+            )
 
-    init {
-        viewModelScope.launch {
-            repo.currentUserFlow().collect { u ->
-                _ui.value = ProfileUiState(loading = false, user = u, error = null)
-            }
-        }
+    fun signOut() {
+        // Nếu repo.signOut() là suspend -> viewModelScope.launch { repo.signOut() }
+        repo.signOut()
     }
-
-    fun signOut() = repo.signOut()
 }
