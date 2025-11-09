@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.rememberNavController
-import com.example.uth_hub.app.navigation.BottomNavigationBar
 import com.example.uth_hub.app.navigation.NavGraph
 import com.example.uth_hub.core.design.theme.Uth_hubTheme
 
@@ -30,7 +29,6 @@ class MainActivity : ComponentActivity() {
 fun MainApp() {
     val navController = rememberNavController()
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController) }
     ) { innerPadding ->
         NavGraph(navController = navController, modifier = Modifier.padding(innerPadding))
     }
