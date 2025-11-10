@@ -4,15 +4,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.example.uth_hub.feature.admin.ui.ManagerProfile
-import com.example.uth_hub.feature.admin.ui.ManagerStudent
-import com.example.uth_hub.feature.admin.ui.PostManagement
-import com.example.uth_hub.feature.admin.ui.ReportedPost
+import com.example.uth_hub.feature.admin.ui.*
 import com.example.uth_hub.feature.auth.ui.*
 import com.example.uth_hub.feature.notifications.ui.NotificationsScreen
 import com.example.uth_hub.feature.post.ui.*
@@ -46,7 +42,6 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         onDispose { auth.removeAuthStateListener(listener) }
     }
 
-    // nhóm route có BottomBar và nhóm auth
     val bottomBarRoutes = remember {
         setOf(Routes.HomeScreen, Routes.CreatePost, Routes.Notification, Routes.Profile)
     }
@@ -61,23 +56,21 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
-    // chỉ hiện BottomBar nếu đã đăng nhập và không nằm ở auth/*
     val showBottomBar =
         isLoggedIn &&
                 currentRoute != null &&
                 authRoutes.none { pattern -> currentRoute.startsWith(pattern.substringBefore("/{")) } &&
                 bottomBarRoutes.any { it == currentRoute }
 
-    // ✅ LUÔN bắt đầu từ Splash để kiểm tra hồ sơ trước khi vào Home
     val startDest = AuthRoutes.Splash
-    @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
+
     Scaffold(
         bottomBar = { if (showBottomBar) BottomNavigationBar(navController) }
-    ) {
+    ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = startDest,
-            modifier = modifier
+            modifier = modifier.padding(innerPadding)
         ) {
             // ===== AUTH =====
             composable(AuthRoutes.Splash) {
@@ -87,16 +80,13 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                         val db = FirebaseFirestore.getInstance()
 
                         if (user == null) {
-                            // 🔹 chưa đăng nhập → SignIn
                             navController.navigate(AuthRoutes.SignIn) { popUpTo(0) }
                         } else {
-                            // 🔹 có user → kiểm tra document Firestore
                             db.collection(AuthConst.USERS)
                                 .document(user.uid)
                                 .get()
                                 .addOnSuccessListener { doc ->
                                     if (!doc.exists() || doc.getString("mssv").isNullOrEmpty()) {
-                                        // chưa hoàn tất hồ sơ → sang CompleteProfile
                                         val e = URLEncoder.encode(
                                             user.email,
                                             StandardCharsets.UTF_8.toString()
@@ -105,7 +95,6 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                                             popUpTo(0)
                                         }
                                     } else {
-                                        // đã có hồ sơ → vào Home
                                         navController.navigate(Routes.HomeScreen) {
                                             popUpTo(0)
                                         }
@@ -182,11 +171,20 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 )
             }
 
-            // ===== APP (có BottomBar) =====
+            // ===== APP =====
             composable(Routes.HomeScreen) { HomeScreen(navController) }
             composable(Routes.CreatePost) { CreatePost(navController) }
             composable(Routes.Notification) { NotificationsScreen(navController) }
             composable(Routes.Profile) { Profile(navController) }
+
+            // ✅ Màn đổi mật khẩu
+            composable(Routes.ChangePassword) {
+                ResetPasswordScreen(
+                    onResetDone = { navController.popBackStack() },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+
 
             // ===== APP (không BottomBar) =====
             composable(Routes.PostManagement) { PostManagement(navController) }

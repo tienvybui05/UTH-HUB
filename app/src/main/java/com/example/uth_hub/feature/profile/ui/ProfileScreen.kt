@@ -13,39 +13,44 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.uth_hub.app.navigation.BottomNavigationBar
+import com.example.uth_hub.app.navigation.AuthRoutes
+import com.example.uth_hub.app.navigation.Routes
 import com.example.uth_hub.feature.profile.ui.components.ProfileHeader
 import com.example.uth_hub.feature.profile.ui.components.ProfileTabBar
 import com.example.uth_hub.feature.profile.ui.components.SettingsSheet
 import com.example.uth_hub.feature.profile.ui.components.TopBarSimple
 import com.example.uth_hub.feature.profile.viewmodel.ProfileViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
     var selectedTabIndex by remember { mutableStateOf(0) }
-    var showSettings by remember { mutableStateOf(false) }   // 👈 state mở sheet
+    var showSettings by remember { mutableStateOf(false) }   // 👈 trạng thái mở sheet
     val ui = vm.ui.collectAsState().value
 
     Scaffold(
         topBar = {
             TopBarSimple(
                 onBackClick = { navController.navigateUp() },
-                onMenuClick = { showSettings = true }          // 👈 mở sheet
+                onMenuClick = { showSettings = true }          // 👈 mở sheet khi bấm dấu ba chấm
             )
         },
-        // Nếu đã chuyển BottomBar lên AppNavigator, hãy xoá dòng dưới:
-        // bottomBar = { BottomNavigationBar(navController) },
     ) { innerPadding ->
 
         // *** SHEET CÀI ĐẶT ***
         if (showSettings) {
             SettingsSheet(
                 onDismissRequest = { showSettings = false },
+                // ✅ thêm callback điều hướng sang màn hình đổi mật khẩu
+                onGoChangePw = {
+                    showSettings = false
+                    navController.navigate(Routes.ChangePassword)
+                },
                 onLogout = {
                     showSettings = false
                     vm.signOut()
                     // quay về màn đăng nhập & xoá backstack
-                    navController.navigate(com.example.uth_hub.app.navigation.AuthRoutes.SignIn) {
+                    navController.navigate(AuthRoutes.SignIn) {
                         popUpTo(0)
                         launchSingleTop = true
                     }
@@ -54,7 +59,12 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
         }
 
         if (ui.loading) {
-            Box(Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
                 CircularProgressIndicator()
             }
             return@Scaffold
@@ -74,8 +84,8 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                     major = user?.institute ?: "—",
                     code = user?.classCode ?: "—",
                     avatarUrl = user?.photoUrl,
-                    onEditClick = { /* TODO */ },
-                    onShareClick = { /* TODO */ }
+                    onEditClick = { /* TODO: sửa thông tin */ },
+                    onShareClick = { /* TODO: chia sẻ profile */ }
                 )
             }
 
@@ -96,12 +106,23 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
 
             when (selectedTabIndex) {
                 0 -> item {
-                    Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text("Chưa có bài viết", color = Color.White)
                     }
                 }
+
                 1 -> item {
-                    Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
                         Text("Chưa có ảnh/video", color = Color.White)
                     }
                 }

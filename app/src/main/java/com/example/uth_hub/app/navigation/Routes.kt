@@ -9,8 +9,9 @@ object Routes {
     const val ManagerStudent = "managerStudent"
     const val ManagerProfile = "managerProfile"
     const val ReportedPost = "reportedPost"
-
-    // nếu có màn “Liked” & “Saved” tách riêng
     const val LikedPost = "likedPosts"
     const val SavedPost = "savedPosts"
+
+    // ✅ thêm route cho đổi mật khẩu
+    const val ChangePassword = "change_password"
 }
