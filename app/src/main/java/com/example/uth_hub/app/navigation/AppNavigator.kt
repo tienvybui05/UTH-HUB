@@ -13,19 +13,13 @@ import com.example.uth_hub.feature.admin.ui.ManagerProfile
 import com.example.uth_hub.feature.admin.ui.ManagerStudent
 import com.example.uth_hub.feature.admin.ui.PostManagement
 import com.example.uth_hub.feature.admin.ui.ReportedPost
-import com.example.uth_hub.feature.auth.ui.ForgotPasswordScreen
-import com.example.uth_hub.feature.auth.ui.OtpResetScreen
-import com.example.uth_hub.feature.auth.ui.ResetPasswordScreen
-import com.example.uth_hub.feature.auth.ui.SignInScreen
-import com.example.uth_hub.feature.auth.ui.SignUpScreen
-import com.example.uth_hub.feature.auth.ui.SplashScreen
+import com.example.uth_hub.feature.auth.ui.*
 import com.example.uth_hub.feature.notifications.ui.NotificationsScreen
-import com.example.uth_hub.feature.post.ui.CreatePost
-import com.example.uth_hub.feature.post.ui.HomeScreen
-import com.example.uth_hub.feature.post.ui.LikedPostScreen
-import com.example.uth_hub.feature.post.ui.SavePostScreen
+import com.example.uth_hub.feature.post.ui.*
 import com.example.uth_hub.feature.profile.ui.Profile
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.example.uth_hub.feature.auth.AuthConst
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -42,7 +36,6 @@ object AuthRoutes {
 
 @Composable
 fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
-    // 1) Theo dõi trạng thái đăng nhập
     val auth = remember { FirebaseAuth.getInstance() }
     var isLoggedIn by remember { mutableStateOf(auth.currentUser != null) }
     DisposableEffect(Unit) {
@@ -53,7 +46,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         onDispose { auth.removeAuthStateListener(listener) }
     }
 
-    // 2) Các nhóm route
+    // nhóm route có BottomBar và nhóm auth
     val bottomBarRoutes = remember {
         setOf(Routes.HomeScreen, Routes.CreatePost, Routes.Notification, Routes.Profile)
     }
@@ -68,15 +61,15 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
-    // 3) Chỉ show BottomBar nếu đã đăng nhập và không đứng ở auth/*
+    // chỉ hiện BottomBar nếu đã đăng nhập và không nằm ở auth/*
     val showBottomBar =
         isLoggedIn &&
                 currentRoute != null &&
                 authRoutes.none { pattern -> currentRoute.startsWith(pattern.substringBefore("/{")) } &&
                 bottomBarRoutes.any { it == currentRoute }
 
-    // 4) Start destination động
-    val startDest = if (isLoggedIn) Routes.HomeScreen else AuthRoutes.Splash
+    // ✅ LUÔN bắt đầu từ Splash để kiểm tra hồ sơ trước khi vào Home
+    val startDest = AuthRoutes.Splash
 
     Scaffold(
         bottomBar = { if (showBottomBar) BottomNavigationBar(navController) }
@@ -90,9 +83,34 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             composable(AuthRoutes.Splash) {
                 SplashScreen(
                     onFinish = {
-                        // chưa đăng nhập → vào SignIn
-                        navController.navigate(AuthRoutes.SignIn) {
-                            popUpTo(0)
+                        val user = FirebaseAuth.getInstance().currentUser
+                        val db = FirebaseFirestore.getInstance()
+
+                        if (user == null) {
+                            // 🔹 chưa đăng nhập → SignIn
+                            navController.navigate(AuthRoutes.SignIn) { popUpTo(0) }
+                        } else {
+                            // 🔹 có user → kiểm tra document Firestore
+                            db.collection(AuthConst.USERS)
+                                .document(user.uid)
+                                .get()
+                                .addOnSuccessListener { doc ->
+                                    if (!doc.exists() || doc.getString("mssv").isNullOrEmpty()) {
+                                        // chưa hoàn tất hồ sơ → sang CompleteProfile
+                                        val e = URLEncoder.encode(
+                                            user.email,
+                                            StandardCharsets.UTF_8.toString()
+                                        )
+                                        navController.navigate("${AuthRoutes.CompleteProfile}/$e") {
+                                            popUpTo(0)
+                                        }
+                                    } else {
+                                        // đã có hồ sơ → vào Home
+                                        navController.navigate(Routes.HomeScreen) {
+                                            popUpTo(0)
+                                        }
+                                    }
+                                }
                         }
                     }
                 )
@@ -102,7 +120,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 SignInScreen(
                     onLoginSuccess = {
                         navController.navigate(Routes.HomeScreen) {
-                            popUpTo(0)   // xoá toàn bộ stack auth
+                            popUpTo(0)
                             launchSingleTop = true
                         }
                     },
@@ -128,7 +146,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             composable("${AuthRoutes.CompleteProfile}/{email}") { backStack ->
                 val encoded = backStack.arguments?.getString("email") ?: ""
                 val email = URLDecoder.decode(encoded, StandardCharsets.UTF_8.toString())
-                com.example.uth_hub.feature.auth.ui.CompleteProfileScreen(
+                CompleteProfileScreen(
                     emailDefault = email,
                     onCompleted = {
                         navController.navigate(Routes.HomeScreen) {
@@ -168,7 +186,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             composable(Routes.HomeScreen) { HomeScreen(navController) }
             composable(Routes.CreatePost) { CreatePost(navController) }
             composable(Routes.Notification) { NotificationsScreen(navController) }
-            composable(Routes.Profile) { Profile(navController) } // khi Profile gọi signOut → listener cập nhật isLoggedIn=false → BottomBar ẩn ngay
+            composable(Routes.Profile) { Profile(navController) }
 
             // ===== APP (không BottomBar) =====
             composable(Routes.PostManagement) { PostManagement(navController) }

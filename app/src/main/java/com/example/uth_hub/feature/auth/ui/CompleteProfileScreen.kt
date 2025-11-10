@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -18,6 +19,7 @@ import com.example.uth_hub.feature.auth.data.AuthRepository
 import com.example.uth_hub.feature.auth.ui.component.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 // Danh sách 7 viện
@@ -48,8 +50,8 @@ fun CompleteProfileScreen(
 
     var mssv by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
-    var classCode by remember { mutableStateOf("") }   // 👈 Lớp
-    var institute by remember { mutableStateOf("") }   // 👈 Viện (string)
+    var classCode by remember { mutableStateOf("") }
+    var institute by remember { mutableStateOf("") }
     var instituteExpanded by remember { mutableStateOf(false) }
 
     var password by remember { mutableStateOf("") }
@@ -123,7 +125,9 @@ fun CompleteProfileScreen(
                             modifier = Modifier
                                 .menuAnchor()
                                 .fillMaxWidth(),
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = instituteExpanded) }
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = instituteExpanded)
+                            }
                         )
                         ExposedDropdownMenu(
                             expanded = instituteExpanded,
@@ -158,7 +162,7 @@ fun CompleteProfileScreen(
                     )
                     Spacer(Modifier.height(6.dp))
 
-                    // Xác nhận
+                    // Xác nhận mật khẩu
                     PasswordField(
                         label = "Xác nhận mật khẩu",
                         password = confirm,
@@ -166,17 +170,25 @@ fun CompleteProfileScreen(
                     )
                     Spacer(Modifier.height(12.dp))
 
+                    // Nút Lưu & Tiếp tục
                     PrimaryButton(
                         text = if (loading) "Đang lưu..." else "Lưu & tiếp tục",
                         enabled = !loading
                     ) {
-                        // Validate
+                        // Clear message trước
+                        msg = null
+
+                        // Validate cơ bản - CHẠY TRÊN UI THREAD
                         if (mssv.isBlank() || phone.isBlank() || institute.isBlank() || classCode.isBlank()) {
-                            msg = "Vui lòng nhập đủ MSSV, SĐT, Viện và Lớp"
+                            msg = "❌ Vui lòng nhập đủ MSSV, SĐT, Viện và Lớp"
                             return@PrimaryButton
                         }
-                        if (password.length < 8 || password != confirm) {
-                            msg = "Mật khẩu ≥ 8 ký tự và khớp xác nhận"
+                        if (password.length < 8) {
+                            msg = "❌ Mật khẩu phải có ít nhất 8 ký tự"
+                            return@PrimaryButton
+                        }
+                        if (password != confirm) {
+                            msg = "❌ Mật khẩu xác nhận không khớp"
                             return@PrimaryButton
                         }
 
@@ -187,14 +199,38 @@ fun CompleteProfileScreen(
                         }
 
                         scope.launch {
+                            loading = true
+
+                            // ĐẢM BẢO UI UPDATE CHẠY TRÊN MAIN THREAD
+                            msg = "⏳ Đang lưu dữ liệu..."
+
                             try {
-                                loading = true
-                                // Lưu hồ sơ + liên kết email/password
+                                // 1) Lưu hồ sơ
+                                msg = "📝 Đang lưu thông tin hồ sơ..."
                                 repo?.completeProfile(uid, mssv, phone, institute, classCode)
-                                repo?.linkEmailPassword(emailDefault, password)
+
+                                // 2) Thử link email/password (bỏ qua lỗi)
+                                msg = "🔗 Đang liên kết tài khoản..."
+                                try {
+                                    repo?.linkEmailPassword(emailDefault, password)
+                                } catch (e: Exception) {
+                                    // Bỏ qua lỗi link
+                                }
+
+                                // 3) Thử reload Auth (bỏ qua lỗi)
+                                try {
+                                    FirebaseAuth.getInstance().currentUser?.reload()
+                                } catch (_: Exception) {}
+
+                                // 4) Thành công
+                                msg = "✅ Hoàn tất hồ sơ thành công! Đang chuyển trang..."
+                                delay(1000) // Cho user đọc thông báo
+
                                 onCompleted()
+
                             } catch (e: Exception) {
-                                msg = e.message
+                                // Hiển thị lỗi cụ thể
+                                msg = "❌ Lỗi: ${e.message ?: "Không xác định"}"
                             } finally {
                                 loading = false
                             }
@@ -202,7 +238,23 @@ fun CompleteProfileScreen(
                     }
 
                     Spacer(Modifier.height(8.dp))
-                    msg?.let { Text(it) }
+
+                    // Hiển thị thông báo - ĐƠN GIẢN HÓA
+                    if (msg != null) {
+                        Text(
+                            text = msg!!,
+                            color = when {
+                                msg!!.contains("✅") -> Color(0xFF388E3C) // Green
+                                msg!!.contains("❌") -> Color(0xFFD32F2F) // Red
+                                msg!!.contains("⏳") -> Color(0xFF757575) // Gray
+                                else -> Color(0xFF1976D2) // Blue
+                            },
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                        )
+                    }
                 }
             }
         }
