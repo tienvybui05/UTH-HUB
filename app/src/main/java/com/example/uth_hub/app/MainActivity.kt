@@ -28,10 +28,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainApp() {
     val navController = rememberNavController()
-    Scaffold(
-    ) { innerPadding ->
-        NavGraph(navController = navController, modifier = Modifier.padding(innerPadding))
-    }
+
+        NavGraph(navController = navController, modifier = Modifier)
 }
 
 @Preview(showBackground = true)

@@ -31,14 +31,17 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.uth_hub.R
 import com.example.uth_hub.core.design.components.Avartar
 import com.example.uth_hub.core.design.components.DrawerMenu
 import com.example.uth_hub.core.design.components.Post
 import com.example.uth_hub.core.design.theme.ColorCustom
+import com.example.uth_hub.core.design.theme.Uth_hubTheme
 import kotlinx.coroutines.launch
 
 @Composable
@@ -81,16 +84,16 @@ fun HomeScreen(navController: NavController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
-                        onClick = { scope.launch { drawerState.open() } }
+                        onClick = { scope.launch { drawerState.open() } }, modifier = Modifier.weight(1f)
                     ) {
-                        Text("☰", fontSize = 16.sp)
+                        Text("☰", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = ColorCustom.primary)
                     }
                     Image(
                         painter = painterResource(id = R.drawable.logouth),
                         contentDescription = "Logo Uth",
-                        modifier = Modifier.width(200.dp).height(40.dp)
+                        modifier = Modifier.weight(2f).height(40.dp)
                     )
-                    Row {}
+                    Row (modifier = Modifier.weight(1f)){}
                 }
 
                 Row(
@@ -125,10 +128,10 @@ fun HomeScreen(navController: NavController) {
     }
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun HomeScreenPreview() {
-//    Uth_hubTheme {
-//        HomeScreen(rememberNavController())
-//    }
-//}
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenPreview() {
+    Uth_hubTheme {
+        HomeScreen(rememberNavController())
+    }
+}

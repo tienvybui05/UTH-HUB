@@ -70,14 +70,14 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
 
     // ✅ LUÔN bắt đầu từ Splash để kiểm tra hồ sơ trước khi vào Home
     val startDest = AuthRoutes.Splash
-
+    @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
     Scaffold(
         bottomBar = { if (showBottomBar) BottomNavigationBar(navController) }
-    ) { innerPadding ->
+    ) {
         NavHost(
             navController = navController,
             startDestination = startDest,
-            modifier = modifier.padding(innerPadding)
+            modifier = modifier
         ) {
             // ===== AUTH =====
             composable(AuthRoutes.Splash) {

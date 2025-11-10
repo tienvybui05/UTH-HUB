@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.uth_hub.app.navigation.Routes
 import com.example.uth_hub.core.design.theme.ColorCustom
 import com.example.uth_hub.core.design.theme.Uth_hubTheme
 import compose.icons.FontAwesomeIcons
@@ -42,7 +43,7 @@ fun PostManagement(navController: NavController){
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically){
             TextButton(onClick = {
-
+                navController.popBackStack()
             }) {
                 Icon(
                     imageVector = FontAwesomeIcons.Solid.ChevronLeft,
@@ -71,7 +72,9 @@ fun PostManagement(navController: NavController){
             Text(text = "--Tất cả khoa--", color = Color.White)
         }
 
-            Button(onClick = {},
+            Button(onClick = {
+                navController.navigate(Routes.ReportedPost)
+            },
                 modifier = Modifier,
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(

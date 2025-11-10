@@ -38,7 +38,7 @@ fun ReportedPost(navController: NavController){
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically){
             TextButton(onClick = {
-
+                navController.popBackStack()
             }) {
                 Icon(
                     imageVector = FontAwesomeIcons.Solid.ChevronLeft,
