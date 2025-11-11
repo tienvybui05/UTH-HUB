@@ -23,6 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.uth_hub.R
@@ -42,12 +45,15 @@ import com.example.uth_hub.core.design.components.DrawerMenu
 import com.example.uth_hub.core.design.components.Post
 import com.example.uth_hub.core.design.theme.ColorCustom
 import com.example.uth_hub.core.design.theme.Uth_hubTheme
+import com.example.uth_hub.feature.post.viewmodel.FeedViewModel
 import kotlinx.coroutines.launch
 
 @Composable
-fun HomeScreen(navController: NavController) {
+fun HomeScreen(navController: NavController, vm: FeedViewModel = viewModel(/* factory */)) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val posts by vm.posts.collectAsState()
+
 
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -119,8 +125,14 @@ fun HomeScreen(navController: NavController) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    items(5) {
-                        Post()
+                    items(posts.size) { idx ->
+                        val p = posts[idx]
+                        PostItem(
+                            post = p,
+                            onLike = { vm.toggleLike(p.id) },
+                            onComment = { /* TODO: điều hướng sang màn Comment */ },
+                            onSave = { vm.toggleSave(p.id) }
+                        )
                     }
                 }
             }

@@ -69,7 +69,7 @@ fun LikedPostScreen(navController: NavController) {
         }
 
     }
-    }
+}
 
 
 // ===== Preview trong Android Studio =====
