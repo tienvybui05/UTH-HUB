@@ -27,7 +27,14 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
     var selectedTabIndex by remember { mutableStateOf(0) }
     var showSettings by remember { mutableStateOf(false) }   // 👈 trạng thái mở sheet
     val ui = vm.ui.collectAsState().value
-
+    val userRole = ui.user?.role ?: "student"
+    LaunchedEffect(userRole) {
+        if (userRole == "admin") {
+            navController.navigate("managerProfile") {
+                popUpTo(0)
+            }
+        }
+    }
     Scaffold(
         topBar = {
             TopBarSimple(

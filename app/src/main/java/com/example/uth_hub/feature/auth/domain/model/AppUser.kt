@@ -9,5 +9,6 @@ data class AppUser(
     val phone: String? = null,
     val institute: String? = null,
     val classCode: String? = null,
+    val role: String = "student",
     val createdAt: Long = System.currentTimeMillis()
 )

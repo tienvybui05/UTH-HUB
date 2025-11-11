@@ -15,3 +15,7 @@ object Routes {
     // ✅ thêm route cho đổi mật khẩu
     const val ChangePassword = "change_password"
 }
+object UserRole {
+    const val STUDENT = "student"
+    const val ADMIN = "admin"
+}

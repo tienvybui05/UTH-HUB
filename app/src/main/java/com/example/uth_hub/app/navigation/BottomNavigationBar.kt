@@ -9,7 +9,10 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -17,12 +20,15 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.uth_hub.core.design.theme.ColorCustom
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import compose.icons.FontAwesomeIcons
 import compose.icons.fontawesomeicons.Solid
 import compose.icons.fontawesomeicons.solid.Bell
 import compose.icons.fontawesomeicons.solid.Home
 import compose.icons.fontawesomeicons.solid.Plus
 import compose.icons.fontawesomeicons.solid.UserCircle
+import kotlinx.coroutines.tasks.await
 
 data class BottomNavItem(
     val route: String,
@@ -32,11 +38,25 @@ data class BottomNavItem(
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
+    var role by remember { mutableStateOf("student") }
+
+    // ✅ Lấy role user hiện tại
+    LaunchedEffect(auth.currentUser) {
+        val uid = auth.currentUser?.uid ?: return@LaunchedEffect
+        val doc = db.collection("users").document(uid).get().await()
+        role = doc.getString("role") ?: "student"
+    }
+
+    // ✅ Nếu là admin thì route Profile -> ManagerProfile
+    val profileRoute = if (role == "admin") Routes.ManagerProfile else Routes.Profile
+
     val items = listOf(
         BottomNavItem(Routes.HomeScreen, "Trang chủ", FontAwesomeIcons.Solid.Home),
         BottomNavItem(Routes.CreatePost, "Bài viết", FontAwesomeIcons.Solid.Plus),
         BottomNavItem(Routes.Notification, "Thông báo", FontAwesomeIcons.Solid.Bell),
-        BottomNavItem(Routes.Profile, "Cá nhân", FontAwesomeIcons.Solid.UserCircle),
+        BottomNavItem(profileRoute, "Cá nhân", FontAwesomeIcons.Solid.UserCircle),
     )
 
     Surface(
@@ -46,9 +66,7 @@ fun BottomNavigationBar(navController: NavController) {
         tonalElevation = 10.dp,
         border = BorderStroke(1.dp, ColorCustom.primary)
     ) {
-        NavigationBar(
-            containerColor = Color.Transparent
-        ) {
+        NavigationBar(containerColor = Color.Transparent) {
             val navBackStackEntry = navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry.value?.destination?.route
 
@@ -83,3 +101,4 @@ fun BottomNavigationBar(navController: NavController) {
         }
     }
 }
+

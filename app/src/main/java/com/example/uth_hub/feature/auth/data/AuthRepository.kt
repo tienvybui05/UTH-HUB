@@ -2,6 +2,7 @@ package com.example.uth_hub.feature.auth.data
 
 import android.app.Activity
 import android.content.Context
+import com.example.uth_hub.app.navigation.UserRole
 import com.example.uth_hub.feature.auth.AuthConst
 import com.example.uth_hub.feature.auth.domain.model.AppUser
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -52,6 +53,7 @@ class AuthRepository(
                 email = user.email ?: email,
                 displayName = user.displayName ?: "",
                 photoUrl = user.photoUrl?.toString(),
+                role = UserRole.STUDENT,
                 createdAt = System.currentTimeMillis()
             )
             db.collection(AuthConst.USERS).document(user.uid).set(appUser).await()

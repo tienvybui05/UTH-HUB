@@ -19,6 +19,10 @@ import com.example.uth_hub.feature.auth.AuthConst
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object AuthRoutes {
     const val Splash = "auth/splash"
@@ -30,10 +34,13 @@ object AuthRoutes {
     const val CompleteProfile = "auth/complete_profile" // + /{email}
 }
 
+
+
 @Composable
 fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     val auth = remember { FirebaseAuth.getInstance() }
     var isLoggedIn by remember { mutableStateOf(auth.currentUser != null) }
+
     DisposableEffect(Unit) {
         val listener = FirebaseAuth.AuthStateListener { fb ->
             isLoggedIn = fb.currentUser != null
@@ -43,7 +50,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     }
 
     val bottomBarRoutes = remember {
-        setOf(Routes.HomeScreen, Routes.CreatePost, Routes.Notification, Routes.Profile)
+        setOf(Routes.HomeScreen, Routes.CreatePost, Routes.Notification, Routes.Profile, Routes.ManagerProfile)
     }
     val authRoutes = remember {
         setOf(
@@ -82,10 +89,13 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                         if (user == null) {
                             navController.navigate(AuthRoutes.SignIn) { popUpTo(0) }
                         } else {
-                            db.collection(AuthConst.USERS)
-                                .document(user.uid)
-                                .get()
-                                .addOnSuccessListener { doc ->
+                            CoroutineScope(Dispatchers.Main).launch {
+                                try {
+                                    val doc = db.collection(AuthConst.USERS)
+                                        .document(user.uid)
+                                        .get()
+                                        .await()
+
                                     if (!doc.exists() || doc.getString("mssv").isNullOrEmpty()) {
                                         val e = URLEncoder.encode(
                                             user.email,
@@ -95,11 +105,23 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                                             popUpTo(0)
                                         }
                                     } else {
-                                        navController.navigate(Routes.HomeScreen) {
-                                            popUpTo(0)
+                                        val role = doc.getString("role") ?: UserRole.STUDENT
+                                        if (role == UserRole.ADMIN) {
+                                            // ✅ admin vào trang quản lý
+                                            navController.navigate(Routes.ManagerProfile) {
+                                                popUpTo(0)
+                                            }
+                                        } else {
+                                            // ✅ student vào home
+                                            navController.navigate(Routes.HomeScreen) {
+                                                popUpTo(0)
+                                            }
                                         }
                                     }
+                                } catch (e: Exception) {
+                                    navController.navigate(AuthRoutes.SignIn) { popUpTo(0) }
                                 }
+                            }
                         }
                     }
                 )
@@ -175,7 +197,29 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             composable(Routes.HomeScreen) { HomeScreen(navController) }
             composable(Routes.CreatePost) { CreatePost(navController) }
             composable(Routes.Notification) { NotificationsScreen(navController) }
-            composable(Routes.Profile) { Profile(navController) }
+
+            // ✅ tách rõ giữa student và admin khi vào trang cá nhân
+            composable(Routes.Profile) {
+                val user = FirebaseAuth.getInstance().currentUser
+                val db = FirebaseFirestore.getInstance()
+                var role by remember { mutableStateOf<String?>(null) }
+
+                LaunchedEffect(user) {
+                    if (user != null) {
+                        val doc = db.collection(AuthConst.USERS)
+                            .document(user.uid)
+                            .get()
+                            .await()
+                        role = doc.getString("role") ?: UserRole.STUDENT
+                    }
+                }
+
+                when (role) {
+                    UserRole.ADMIN -> ManagerProfile(navController)
+                    UserRole.STUDENT -> Profile(navController)
+                    else -> Profile(navController) // fallback
+                }
+            }
 
             // ✅ Màn đổi mật khẩu
             composable(Routes.ChangePassword) {
@@ -185,8 +229,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 )
             }
 
-
-            // ===== APP (không BottomBar) =====
+            // ===== ADMIN / OTHER =====
             composable(Routes.PostManagement) { PostManagement(navController) }
             composable(Routes.ManagerProfile) { ManagerProfile(navController) }
             composable(Routes.ManagerStudent) { ManagerStudent(navController) }
