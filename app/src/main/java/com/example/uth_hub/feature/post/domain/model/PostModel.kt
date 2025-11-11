@@ -2,7 +2,7 @@ package com.example.uth_hub.feature.post.domain.model
 
 import com.google.firebase.Timestamp
 
-data class Post(
+data class PostModel(
     val id: String = "",
     val authorId: String = "",
     val authorName: String = "",

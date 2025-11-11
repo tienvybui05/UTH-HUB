@@ -1,12 +1,13 @@
 package com.example.uth_hub.feature.post.data
 
 import android.net.Uri
-import com.example.uth_hub.feature.post.domain.model.Post
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.storage.FirebaseStorage
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class PostRepository(
@@ -26,7 +27,7 @@ class PostRepository(
     ): String {
         val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not logged in")
 
-        // 1) Upload ảnh (nếu có)
+        // 1) Upload ảnh
         val imageUrls = mutableListOf<String>()
         for (uri in imageUris) {
             val fileName = "posts/${uid}/${System.currentTimeMillis()}_${uri.lastPathSegment}"
@@ -86,18 +87,35 @@ class PostRepository(
 
     suspend fun toggleSave(postId: String) {
         val uid = auth.currentUser?.uid ?: return
-        val saveDoc = postsCol.document(postId).collection("saves").document(uid)
-        val postDoc = postsCol.document(postId)
+        val postDoc = db.collection("posts").document(postId)
+        val postSaveDoc = postDoc.collection("saves").document(uid)
+        val userSaveDoc = db.collection("users").document(uid)
+            .collection("saves").document(postId)
 
         db.runTransaction { tr ->
-            val saved = tr.get(saveDoc).exists()
+            val saved = tr.get(userSaveDoc).exists()
             if (saved) {
-                tr.delete(saveDoc)
+                tr.delete(userSaveDoc)
+                tr.delete(postSaveDoc)
                 tr.update(postDoc, "saveCount", FieldValue.increment(-1))
             } else {
-                tr.set(saveDoc, mapOf("createdAt" to FieldValue.serverTimestamp()))
+                val payload = mapOf("createdAt" to FieldValue.serverTimestamp())
+                tr.set(userSaveDoc, payload)
+                tr.set(postSaveDoc, payload)
                 tr.update(postDoc, "saveCount", FieldValue.increment(1))
             }
         }.await()
     }
+
+
+    // PostRepository.kt
+    fun savedIdsFlow(uid: String) = callbackFlow<Set<String>> {
+        val ref = db.collection("users").document(uid).collection("saves")
+        val reg = ref.addSnapshotListener { snap, _ ->
+            val ids = snap?.documents?.map { it.id }?.toSet() ?: emptySet()
+            trySend(ids)
+        }
+        awaitClose { reg.remove() }
+    }
+
 }
