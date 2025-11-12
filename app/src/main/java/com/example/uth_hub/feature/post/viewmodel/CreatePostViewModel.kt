@@ -4,19 +4,17 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uth_hub.feature.post.data.PostRepository
+import com.example.uth_hub.feature.post.viewmodel.CreatePostUiState
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class CreatePostUiState(
-    val posting: Boolean = false,
-    val error: String? = null,
-    val postedId: String? = null
-)
+
 
 class CreatePostViewModel(private val repo: PostRepository) : ViewModel() {
     private val _ui = MutableStateFlow(CreatePostUiState())
-    val ui = _ui.asStateFlow()
+    val ui: StateFlow<CreatePostUiState> = _ui.asStateFlow()
 
     fun create(
         content: String,

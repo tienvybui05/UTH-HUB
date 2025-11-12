@@ -52,7 +52,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 @Composable
-fun Post(
+fun PostItem(
     postModel: com.example.uth_hub.feature.post.domain.model.PostModel,
     onLike: () -> Unit,
     onComment: () -> Unit,

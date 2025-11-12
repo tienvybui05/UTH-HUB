@@ -3,30 +3,28 @@ package com.example.uth_hub.feature.post.ui
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.uth_hub.R
+import coil.compose.rememberAsyncImagePainter
+import com.example.uth_hub.feature.post.di.PostDI
 import com.example.uth_hub.feature.post.viewmodel.CreatePostViewModel
+import com.example.uth_hub.feature.post.viewmodel.CreatePostViewModelFactory
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,7 +32,7 @@ import com.example.uth_hub.feature.post.viewmodel.CreatePostViewModel
 fun CreatePost(
     navController: NavController,
     vm: CreatePostViewModel = androidx.lifecycle.viewmodel.compose.viewModel(
-        factory = /* provide your VM factory that injects PostRepository */
+        factory = CreatePostViewModelFactory(PostDI.providePostRepository())
     )
 ) {
     var postContent by remember { mutableStateOf("") }
@@ -87,7 +85,7 @@ fun CreatePost(
                 .padding(horizontal = 16.dp, vertical = 12.dp)
                 .fillMaxSize()
         ) {
-            // ... phần avatar + handle của bạn giữ nguyên
+            // ... phần avatar + handle giữ nguyên
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 IconButton(onClick = { picker.launch("image/*") }) {
