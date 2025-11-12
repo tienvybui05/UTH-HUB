@@ -177,13 +177,6 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 )
             }
 
-            composable("${AuthRoutes.OtpReset}/{email}") { backStack ->
-                val email = backStack.arguments?.getString("email") ?: ""
-                OtpResetScreen(
-                    email = email,
-                    onVerified = { navController.navigate("${AuthRoutes.Reset}/$email") }
-                )
-            }
 
             composable("${AuthRoutes.Reset}/{email}") {
                 ResetPasswordScreen(
