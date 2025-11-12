@@ -43,7 +43,6 @@ import com.example.uth_hub.core.design.theme.Uth_hubTheme
 import com.example.uth_hub.feature.post.di.PostDI
 import com.example.uth_hub.feature.post.viewmodel.FeedViewModel
 import com.example.uth_hub.feature.post.viewmodel.FeedViewModelFactory
-import com.example.uth_hub.feature.post.domain.model.PostModel
 import kotlinx.coroutines.launch
 
 @Composable
