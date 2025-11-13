@@ -1,6 +1,5 @@
 package com.example.uth_hub.feature.auth.data
 
-import android.app.Activity
 import android.content.Context
 import com.example.uth_hub.app.navigation.UserRole
 import com.example.uth_hub.feature.auth.AuthConst
