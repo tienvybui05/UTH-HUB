@@ -168,15 +168,6 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 )
             }
 
-            composable(AuthRoutes.Forgot) {
-                ForgotPasswordScreen(
-                    onOtpSent = { email ->
-                        val e = URLEncoder.encode(email, StandardCharsets.UTF_8.toString())
-                        navController.navigate("${AuthRoutes.OtpReset}/$e")
-                    }
-                )
-            }
-
 
             composable("${AuthRoutes.Reset}/{email}") {
                 ResetPasswordScreen(

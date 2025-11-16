@@ -115,14 +115,6 @@ fun SignInScreen(
                             style = MaterialTheme.typography.labelSmall
                         )
                     }
-
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        TextLinkButton("Forgot Password?") { onForgotClick() }
-                    }
                 }
             }
 
@@ -213,14 +205,6 @@ private fun SignInScreenContent(
                         password = password,
                         onValueChange = onPasswordChange
                     )
-
-                    Spacer(Modifier.height(8.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        TextLinkButton("Forgot Password?") { onForgotClick() }
-                    }
                 }
             }
 
