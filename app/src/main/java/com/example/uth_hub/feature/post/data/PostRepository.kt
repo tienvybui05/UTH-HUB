@@ -148,29 +148,74 @@ class PostRepository(
 
     // === Liked & Saved feeds ===
 
-    suspend fun getLikedPostsByMe(limit: Long = 50): List<PostModel> {
-        val uid = auth.currentUser?.uid ?: return emptyList()
-        val likeDocs = db.collectionGroup("likes")
-            .whereEqualTo(FieldPath.documentId(), uid)
-            .limit(limit)
-            .get()
-            .await()
+//    suspend fun getLikedPostsByMe(limit: Long = 50): List<PostModel> {
+//        val uid = auth.currentUser?.uid ?: return emptyList()
+//        val likeDocs = db.collectionGroup("likes")
+//            .whereEqualTo(FieldPath.documentId(), uid)
+//            .limit(limit)
+//            .get()
+//            .await()
+//
+//        val postRefs = likeDocs.documents.mapNotNull { it.reference.parent.parent } // /posts/{postId}
+//        val posts = fetchPostsByRefs(postRefs)
+//        return posts.map { it.copy(likedByMe = true) }
+//    }
+suspend fun getLikedPostsByMe(limit: Long = 50): List<PostModel> {
+    val uid = auth.currentUser?.uid ?: return emptyList()
 
-        val postRefs = likeDocs.documents.mapNotNull { it.reference.parent.parent } // /posts/{postId}
-        val posts = fetchPostsByRefs(postRefs)
-        return posts.map { it.copy(likedByMe = true) }
+    // 1. Lấy một list post mới nhất
+    val snap = postsCol
+        .orderBy("createdAt", Query.Direction.DESCENDING)
+        .limit(limit)
+        .get()
+        .await()
+
+    val allPosts = snap.documents.map { docToPost(it) }
+
+    // 2. Chỉ giữ lại những post mà chính mình đã like
+    val result = mutableListOf<PostModel>()
+    for (p in allPosts) {
+        val liked = isLiked(p.id, uid)   // đọc /posts/{postId}/likes/{uid}
+        if (liked) {
+            result += p.copy(likedByMe = true)
+        }
     }
+    return result
+}
 
-    suspend fun getSavedPostsByMe(limit: Long = 50): List<PostModel> {
-        val uid = auth.currentUser?.uid ?: return emptyList()
-        val saveDocs = db.collectionGroup("saves")
-            .whereEqualTo(FieldPath.documentId(), uid)
-            .limit(limit)
-            .get()
-            .await()
 
-        val postRefs = saveDocs.documents.mapNotNull { it.reference.parent.parent }
-        val posts = fetchPostsByRefs(postRefs)
-        return posts.map { it.copy(savedByMe = true) }
+//    suspend fun getSavedPostsByMe(limit: Long = 50): List<PostModel> {
+//        val uid = auth.currentUser?.uid ?: return emptyList()
+//        val saveDocs = db.collectionGroup("saves")
+//            .whereEqualTo(FieldPath.documentId(), uid)
+//            .limit(limit)
+//            .get()
+//            .await()
+//
+//        val postRefs = saveDocs.documents.mapNotNull { it.reference.parent.parent }
+//        val posts = fetchPostsByRefs(postRefs)
+//        return posts.map { it.copy(savedByMe = true) }
+//    }
+suspend fun getSavedPostsByMe(limit: Long = 50): List<PostModel> {
+    val uid = auth.currentUser?.uid ?: return emptyList()
+
+    // 1. Lấy một list post mới nhất
+    val snap = postsCol
+        .orderBy("createdAt", Query.Direction.DESCENDING)
+        .limit(limit)
+        .get()
+        .await()
+
+    val allPosts = snap.documents.map { docToPost(it) }
+
+    // 2. Chỉ giữ lại những post mà chính mình đã lưu
+    val result = mutableListOf<PostModel>()
+    for (p in allPosts) {
+        val saved = isSaved(p.id, uid)   // đọc /posts/{postId}/likes/{uid}
+        if (saved) {
+            result += p.copy(likedByMe = true)
+        }
     }
+    return result
+}
 }

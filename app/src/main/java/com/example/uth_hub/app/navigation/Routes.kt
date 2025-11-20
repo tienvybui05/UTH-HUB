@@ -11,8 +11,6 @@ object Routes {
     const val ReportedPost = "reportedPost"
     const val LikedPost = "likedPosts"
     const val SavedPost = "savedPosts"
-
-    // ✅ thêm route cho đổi mật khẩu
     const val ChangePassword = "change_password"
 }
 object UserRole {

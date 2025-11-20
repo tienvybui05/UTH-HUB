@@ -20,7 +20,7 @@ class SignInViewModel : ViewModel() {
     var password = mutableStateOf("")
     var isLoading = mutableStateOf(false)
 
-    // 👇 lỗi theo từng ô + lỗi chung
+    //  lỗi
     var idError = mutableStateOf<String?>(null)      // cho ô MSSV/Email
     var passError = mutableStateOf<String?>(null)    // cho ô Password
     var message = mutableStateOf<String?>(null)      // lỗi chung (toast/ dưới nút)

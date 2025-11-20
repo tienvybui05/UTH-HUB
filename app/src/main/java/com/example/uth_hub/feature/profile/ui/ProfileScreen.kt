@@ -48,15 +48,29 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
         if (showSettings) {
             SettingsSheet(
                 onDismissRequest = { showSettings = false },
-                // ✅ thêm callback điều hướng sang màn hình đổi mật khẩu
+
+                //  Đã lưu
+                onGoSaved = {
+                    showSettings = false
+                    navController.navigate(Routes.SavedPost)
+                },
+
+                //  Đã thích
+                onGoLiked = {
+                    showSettings = false
+                    navController.navigate(Routes.LikedPost)
+                },
+
+                // Đổi mật khẩu
                 onGoChangePw = {
                     showSettings = false
                     navController.navigate(Routes.ChangePassword)
                 },
+
+                // Logout
                 onLogout = {
                     showSettings = false
                     vm.signOut()
-                    // quay về màn đăng nhập & xoá backstack
                     navController.navigate(AuthRoutes.SignIn) {
                         popUpTo(0)
                         launchSingleTop = true
@@ -64,6 +78,7 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                 }
             )
         }
+
 
         if (ui.loading) {
             Box(
