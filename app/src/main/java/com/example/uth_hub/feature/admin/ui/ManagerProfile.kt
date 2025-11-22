@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
@@ -48,6 +50,7 @@ import com.example.uth_hub.app.navigation.Routes
 import com.example.uth_hub.core.design.theme.ColorCustom
 import com.example.uth_hub.core.design.theme.Uth_hubTheme
 import com.example.uth_hub.feature.profile.ui.components.SettingsSheet
+import com.example.uth_hub.feature.profile.viewmodel.ProfileViewModel
 import com.google.firebase.auth.FirebaseAuth
 import compose.icons.FontAwesomeIcons
 import compose.icons.fontawesomeicons.Solid
@@ -62,9 +65,11 @@ public class Statistical(
     var colorIcon: Color
 ){}
 @Composable
-fun ManagerProfile(navController: NavController) {
+fun ManagerProfile(navController: NavController ,vm: ProfileViewModel = viewModel()) {
     var showSettings by remember { mutableStateOf(false) }
 
+    val ui = vm.ui.collectAsState().value
+    val user = ui.user
     // Dữ liệu thống kê (ví dụ tĩnh)
     val listStatistical = listOf(
         Statistical(100, "Bài viết", FontAwesomeIcons.Solid.Ghost, ColorCustom.primary),
@@ -107,33 +112,31 @@ fun ManagerProfile(navController: NavController) {
             ) {
                 Column {
                     Text(
-                        "Đinh Quốc Đạt",
+                        text = user?.displayName ?: "—",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
                     )
-                    Text("052205000317", fontSize = 16.sp, color = Color.White)
-                }
-
-                Row {
-                    // Nút menu ba chấm giống student
-
-
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .crossfade(true)
-                            .build(),
-                        contentDescription = "Avatar",
-                        contentScale = ContentScale.Crop,
-                        placeholder = painterResource(R.drawable.avartardefault),
-                        error = painterResource(R.drawable.avartardefault),
-                        modifier = Modifier
-                            .size(82.dp)
-                            .clip(CircleShape)
-                            .border(2.dp, Color.White, CircleShape)
+                    Text(
+                        text = user?.mssv ?: "—",
+                        fontSize = 16.sp,
+                        color = Color.White
                     )
                 }
+
+                AsyncImage(
+                    model = user?.photoUrl,
+                    contentDescription = "Avatar",
+                    contentScale = ContentScale.Crop,
+                    placeholder = painterResource(R.drawable.avartardefault),
+                    error = painterResource(R.drawable.avartardefault),
+                    modifier = Modifier
+                        .size(82.dp)
+                        .clip(CircleShape)
+                        .border(2.dp, Color.White, CircleShape)
+                )
             }
+
 
             Card(
                 modifier = Modifier
@@ -143,12 +146,22 @@ fun ManagerProfile(navController: NavController) {
                     .padding(19.dp, 8.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
             ) {
-                Text(
-                    "Quản trị viên",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = ColorCustom.primary
-                )
+              Card(
+                  modifier = Modifier
+                      .clip(RoundedCornerShape(2.dp))
+                      .background(color = Color.White).shadow(15.dp)
+                      ,
+                  colors = CardDefaults.cardColors(containerColor = Color(0xFFC3E1E1)),
+              ) {
+                  Text(
+                      "Quản trị viên",
+                      fontSize = 20.sp,
+                      fontWeight = FontWeight.Bold,
+                      color = ColorCustom.primary,
+                      modifier = Modifier.padding(15.dp, 8.dp)
+                  )
+              }
+
             }
         }
 
