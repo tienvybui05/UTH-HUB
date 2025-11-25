@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.uth_hub.app.navigation.Routes
 import com.example.uth_hub.core.design.components.PostItem
 import com.example.uth_hub.feature.post.di.PostDI
 import com.example.uth_hub.feature.post.viewmodel.SavedPostsViewModel
@@ -114,7 +115,7 @@ fun SavePostScreen(navController: NavController) {
                         PostItem(
                             postModel = p,
                             onLike = { vm.toggleLike(p.id) },
-                            onComment = { /* TODO: điều hướng comment */ },
+                            onComment = { navController.navigate("${Routes.PostComment}/${p.id}") },
                             onSave = { vm.toggleSave(p.id) }
                         )
                     }

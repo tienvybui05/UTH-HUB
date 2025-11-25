@@ -12,6 +12,10 @@ import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import com.example.uth_hub.feature.post.domain.model.CommentModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+
 
 class PostRepository(
     private val auth: FirebaseAuth,
@@ -136,6 +140,80 @@ class PostRepository(
             saveCount = d.getLong("saveCount") ?: 0L
         )
 
+    suspend fun getPostById(postId: String): PostModel? {
+        val doc = postsCol.document(postId).get().await()
+        return if (doc.exists()) docToPost(doc) else null
+    }
+
+    //Helper chuyển DocumentSnapshot → CommentModel
+    private fun docToComment(postId: String, d: com.google.firebase.firestore.DocumentSnapshot): CommentModel =
+        CommentModel(
+            id = d.id,
+            postId = postId,
+            authorId = d.getString("authorId") ?: "",
+            authorName = d.getString("authorName") ?: "",
+            authorAvatarUrl = d.getString("authorAvatarUrl") ?: "",
+            text = d.getString("text") ?: "",
+            createdAt = d.getTimestamp("createdAt")
+        )
+
+    //Flow listen comments của 1 post
+
+    fun observeComments(postId: String): Flow<List<CommentModel>> = callbackFlow {
+        val ref = postsCol.document(postId)
+            .collection("comments")
+            .orderBy("createdAt", Query.Direction.ASCENDING)
+
+        val reg = ref.addSnapshotListener { snap, err ->
+            if (err != null) {
+                close(err)
+            } else {
+                val list = snap?.documents
+                    ?.map { docToComment(postId, it) }
+                    ?: emptyList()
+                trySend(list)
+            }
+        }
+        awaitClose { reg.remove() }
+    }
+
+    // thêm comment
+    suspend fun addComment(postId: String, text: String) {
+        val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not logged in")
+
+        // Lấy thông tin user để gắn vào comment
+        val userDoc = db.collection("users").document(uid).get().await()
+        val authorName = userDoc.getString("displayName")
+            ?: userDoc.getString("name")
+            ?: auth.currentUser?.displayName
+            ?: "Ẩn danh"
+
+        val avatarUrl = userDoc.getString("photoUrl")
+            ?: userDoc.getString("avatarUrl")
+            ?: auth.currentUser?.photoUrl?.toString()
+            ?: ""
+
+        val commentsCol = postsCol.document(postId).collection("comments")
+
+        val data = mapOf(
+            "authorId" to uid,
+            "authorName" to authorName,
+            "authorAvatarUrl" to avatarUrl,
+            "text" to text,
+            "createdAt" to FieldValue.serverTimestamp()
+        )
+
+        // Tạo comment + tăng commentCount
+        val postDoc = postsCol.document(postId)
+        db.runTransaction { tr ->
+            tr.set(commentsCol.document(), data)
+            tr.update(postDoc, "commentCount", FieldValue.increment(1))
+        }.await()
+    }
+
+
+
+
     private suspend fun fetchPostsByRefs(postRefs: List<DocumentReference>): List<PostModel> {
         if (postRefs.isEmpty()) return emptyList()
         // Dùng từng get().await() để tránh lỗi getAll() trên vài phiên bản lib
@@ -213,7 +291,7 @@ suspend fun getSavedPostsByMe(limit: Long = 50): List<PostModel> {
     for (p in allPosts) {
         val saved = isSaved(p.id, uid)   // đọc /posts/{postId}/likes/{uid}
         if (saved) {
-            result += p.copy(likedByMe = true)
+            result += p.copy(savedByMe = true)
         }
     }
     return result

@@ -12,8 +12,10 @@ object Routes {
     const val LikedPost = "likedPosts"
     const val SavedPost = "savedPosts"
     const val ChangePassword = "change_password"
-
     const val AboutTerms = "about_terms"
+    const val PostComment = "postComment"
+
+
 }
 object UserRole {
     const val STUDENT = "student"

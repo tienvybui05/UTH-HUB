@@ -108,12 +108,12 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                                     } else {
                                         val role = doc.getString("role") ?: UserRole.STUDENT
                                         if (role == UserRole.ADMIN) {
-                                            // ✅ admin vào trang quản lý
+                                            // admin vào trang quản lý
                                             navController.navigate(Routes.ManagerProfile) {
                                                 popUpTo(0)
                                             }
                                         } else {
-                                            // ✅ student vào home
+                                            // student vào home
                                             navController.navigate(Routes.HomeScreen) {
                                                 popUpTo(0)
                                             }
@@ -183,7 +183,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             composable(Routes.CreatePost) { CreatePost(navController) }
             composable(Routes.Notification) { NotificationsScreen(navController) }
 
-            // ✅ tách rõ giữa student và admin khi vào trang cá nhân
+            // tách rõ giữa student và admin khi vào trang cá nhân
             composable(Routes.Profile) {
                 val user = FirebaseAuth.getInstance().currentUser
                 val db = FirebaseFirestore.getInstance()
@@ -225,6 +225,10 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             composable(Routes.ReportedPost) { ReportedPost(navController) }
             composable(Routes.LikedPost) { LikedPostScreen(navController) }
             composable(Routes.SavedPost) { SavePostScreen(navController) }
+            composable("${Routes.PostComment}/{postId}") { backStack ->
+                val postId = backStack.arguments?.getString("postId") ?: ""
+                PostCommentScreen(navController = navController, postId = postId)
+            }
         }
     }
 }

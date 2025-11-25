@@ -34,6 +34,7 @@ import com.example.uth_hub.feature.post.viewmodel.FeedViewModelFactory
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.uth_hub.app.navigation.Routes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
@@ -155,7 +156,7 @@ fun HomeScreen(
                         PostItem(
                             postModel = p,
                             onLike = { vm.toggleLike(p.id) },
-                            onComment = { /* TODO: điều hướng sang Comment */ },
+                            onComment = { navController.navigate("${Routes.PostComment}/${p.id}") },
                             onSave = { vm.toggleSave(p.id) }
                         )
                     }
