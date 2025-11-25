@@ -97,7 +97,14 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                     navController.navigate(Routes.ChangePassword)
                 },
 
-                // Logout
+                // Điều khoản
+                onGoTerms = {
+                    showSettings = false
+                    navController.navigate(Routes.AboutTerms)
+                },
+
+
+                        // Logout
                 onLogout = {
                     showSettings = false
                     vm.signOut()

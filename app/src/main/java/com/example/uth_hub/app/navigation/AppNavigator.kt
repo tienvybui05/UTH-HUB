@@ -13,6 +13,7 @@ import com.example.uth_hub.feature.auth.ui.*
 import com.example.uth_hub.feature.notifications.ui.NotificationsScreen
 import com.example.uth_hub.feature.post.ui.*
 import com.example.uth_hub.feature.profile.ui.Profile
+import com.example.uth_hub.feature.profile.ui.AboutTermsScreen
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.uth_hub.feature.auth.AuthConst
@@ -205,7 +206,11 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 }
             }
 
-            // ✅ Màn đổi mật khẩu
+            // Giới thiệu & Điều khoản
+            composable(Routes.AboutTerms) {
+                AboutTermsScreen(navController)
+            }
+            // Màn đổi mật khẩu
             composable(Routes.ChangePassword) {
                 ResetPasswordScreen(
                     onResetDone = { navController.popBackStack() },
