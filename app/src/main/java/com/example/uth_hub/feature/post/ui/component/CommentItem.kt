@@ -23,7 +23,10 @@ import com.google.firebase.Timestamp
 import java.util.concurrent.TimeUnit
 
 @Composable
-fun CommentItem(comment: CommentModel) {
+fun CommentItem(
+    comment: CommentModel,
+    nowMillis: Long // truyền từ CommentsListSection xuống
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -75,7 +78,7 @@ fun CommentItem(comment: CommentModel) {
             Spacer(Modifier.height(4.dp))
 
             Text(
-                text = formatTimeAgo(comment.createdAt),
+                text = formatTimeAgo(comment.createdAt, nowMillis),
                 fontSize = 12.sp,
                 color = androidx.compose.ui.graphics.Color(0xFF999999)
             )
@@ -83,11 +86,15 @@ fun CommentItem(comment: CommentModel) {
     }
 }
 
-private fun formatTimeAgo(timestamp: Timestamp?): String {
+private fun formatTimeAgo(timestamp: Timestamp?, nowMillis: Long): String {
     if (timestamp == null) return ""
-    val now = System.currentTimeMillis()
+
     val time = timestamp.toDate().time
-    val diff = now - time
+    val diffRaw = nowMillis - time
+
+    // nếu giờ máy bị chậm hơn server → diffRaw âm
+    val diff = if (diffRaw < 0) 0L else diffRaw
+
     val minutes = TimeUnit.MILLISECONDS.toMinutes(diff)
 
     return when {

@@ -16,6 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.uth_hub.feature.post.domain.model.CommentModel
 import com.example.uth_hub.feature.post.domain.model.PostModel
+import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
+
+
 
 @Composable
 fun PostCommentBody(
@@ -77,6 +81,16 @@ fun PostDetailSection(
 fun CommentsListSection(
     comments: List<CommentModel>
 ) {
+    // ⏱ 1 timer duy nhất cho cả list comment
+    var nowMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000L)                    // mỗi 60 giây
+            nowMillis = System.currentTimeMillis()
+        }
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -96,7 +110,10 @@ fun CommentsListSection(
             }
         } else {
             items(comments, key = { it.id }) { c ->
-                CommentItem(comment = c)
+                CommentItem(
+                    comment = c,
+                    nowMillis = nowMillis   // 👈 truyền xuống
+                )
             }
         }
     }
