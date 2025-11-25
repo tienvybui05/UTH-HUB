@@ -1,5 +1,7 @@
 package com.example.uth_hub.feature.profile.viewmodel
 
+import android.graphics.Bitmap
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uth_hub.feature.auth.domain.model.AppUser
@@ -16,21 +18,74 @@ data class ProfileUiState(
 )
 
 class ProfileViewModel : ViewModel() {
-    private val repo = ProfileRepository(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
 
-    // Tối ưu: dùng stateIn
+    private val repo = ProfileRepository(
+        FirebaseAuth.getInstance(),
+        FirebaseFirestore.getInstance()
+    )
+
+    // giữ nguyên logic stateIn bạn cung cấp
     val ui: StateFlow<ProfileUiState> =
-        repo.currentUserFlow() // Flow<AppUser?>
-            .map { user -> ProfileUiState(loading = false, user = user, error = null) }
-            .catch { e -> emit(ProfileUiState(loading = false, user = null, error = e.message)) }
+        repo.currentUserFlow()
+            .map { user ->
+                ProfileUiState(
+                    loading = false,
+                    user = user,
+                    error = null
+                )
+            }
+            .catch { e ->
+                emit(
+                    ProfileUiState(
+                        loading = false,
+                        user = null,
+                        error = e.message
+                    )
+                )
+            }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = ProfileUiState(loading = true)
             )
 
+    /** Đăng xuất */
     fun signOut() {
-        // Nếu repo.signOut() là suspend -> viewModelScope.launch { repo.signOut() }
         repo.signOut()
+    }
+
+    // ============================
+    //      🔥 AVATAR FUNCTIONS
+    // ============================
+
+    /** Cập nhật avatar từ thư viện (URI) */
+    fun updateAvatarFromUri(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                repo.updateAvatarFromUri(uri)
+            } catch (_: Exception) {
+                // không thay đổi state, không đụng UI State
+            }
+        }
+    }
+
+    /** Cập nhật avatar từ ảnh chụp (Bitmap) */
+    fun updateAvatarFromBitmap(bitmap: Bitmap) {
+        viewModelScope.launch {
+            try {
+                repo.updateAvatarFromBitmap(bitmap)
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    /** Reset avatar về avatar mặc định từ Google */
+    fun resetAvatarToGoogleDefault() {
+        viewModelScope.launch {
+            try {
+                repo.resetAvatarToGoogleDefault()
+            } catch (_: Exception) {
+            }
+        }
     }
 }

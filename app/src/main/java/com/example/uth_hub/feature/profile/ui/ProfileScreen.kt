@@ -19,27 +19,51 @@ import com.example.uth_hub.feature.profile.ui.components.ProfileHeader
 import com.example.uth_hub.feature.profile.ui.components.ProfileTabBar
 import com.example.uth_hub.feature.profile.ui.components.SettingsSheet
 import com.example.uth_hub.feature.profile.ui.components.TopBarSimple
+import com.example.uth_hub.feature.profile.ui.components.ChangeAvatarSheet
+import com.example.uth_hub.feature.profile.util.rememberAvatarPicker
 import com.example.uth_hub.feature.profile.viewmodel.ProfileViewModel
+import com.example.uth_hub.feature.auth.AuthConst
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.tasks.await
 
 @Composable
 fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
     var selectedTabIndex by remember { mutableStateOf(0) }
-    var showSettings by remember { mutableStateOf(false) }   // 👈 trạng thái mở sheet
+    var showSettings by remember { mutableStateOf(false) }      // sheet cài đặt
+    var showChangeAvatar by remember { mutableStateOf(false) }  // sheet đổi avatar
+
     val ui = vm.ui.collectAsState().value
+
+    // role: nếu là admin thì chuyển sang màn admin profile
     val userRole = ui.user?.role ?: "student"
     LaunchedEffect(userRole) {
         if (userRole == "admin") {
-            navController.navigate("managerProfile") {
+            navController.navigate(Routes.ManagerProfile) {
                 popUpTo(0)
             }
         }
     }
+
+    // Avatar picker: nhận uri / bitmap và đẩy xuống ViewModel
+    val avatarPicker = rememberAvatarPicker(
+        onGalleryImagePicked = { uri ->
+            if (uri != null) {
+                vm.updateAvatarFromUri(uri)
+            }
+        },
+        onCameraImageTaken = { bitmap ->
+            if (bitmap != null) {
+                vm.updateAvatarFromBitmap(bitmap)
+            }
+        }
+    )
+
     Scaffold(
         topBar = {
             TopBarSimple(
                 onBackClick = { navController.navigateUp() },
-                onMenuClick = { showSettings = true }          // 👈 mở sheet khi bấm dấu ba chấm
+                onMenuClick = { showSettings = true }
             )
         },
     ) { innerPadding ->
@@ -61,6 +85,12 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                     navController.navigate(Routes.LikedPost)
                 },
 
+                // 👉 Thay đổi ảnh đại diện
+                onGoChangeAvatar = {
+                    showSettings = false
+                    showChangeAvatar = true
+                },
+
                 // Đổi mật khẩu
                 onGoChangePw = {
                     showSettings = false
@@ -79,6 +109,23 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
             )
         }
 
+        // *** SHEET ĐỔI AVATAR ***
+        if (showChangeAvatar) {
+            ChangeAvatarSheet(
+                onPickFromGallery = {
+                    avatarPicker.openGallery()
+                },
+                onTakePhoto = {
+                    avatarPicker.openCamera()
+                },
+                onRemove = {
+                    vm.resetAvatarToGoogleDefault()
+                },
+                onDismiss = {
+                    showChangeAvatar = false
+                }
+            )
+        }
 
         if (ui.loading) {
             Box(

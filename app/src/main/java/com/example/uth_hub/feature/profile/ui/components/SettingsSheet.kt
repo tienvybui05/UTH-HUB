@@ -26,6 +26,7 @@ fun SettingsSheet(
     onGoSaved: (() -> Unit)? = null,
     onGoLiked: (() -> Unit)? = null,
     onGoEditInfo: (() -> Unit)? = null,
+    onGoChangeAvatar: (() -> Unit)? = null,   // mới: đổi avatar
     onGoChangePw: (() -> Unit)? = null,
     onGoHelp: (() -> Unit)? = null,
     onGoTerms: (() -> Unit)? = null,
@@ -58,6 +59,12 @@ fun SettingsSheet(
             SheetItem(icon = Icons.Outlined.Edit, text = "Chỉnh sửa thông tin") {
                 onGoEditInfo?.invoke()
             }
+
+            // MỚI: Thay đổi ảnh đại diện
+            SheetItem(icon = Icons.Outlined.AccountCircle, text = "Thay đổi ảnh đại diện") {
+                onGoChangeAvatar?.invoke()
+            }
+
             SheetItem(icon = Icons.Outlined.VpnKey, text = "Đổi mật khẩu") {
                 onGoChangePw?.invoke()
             }
