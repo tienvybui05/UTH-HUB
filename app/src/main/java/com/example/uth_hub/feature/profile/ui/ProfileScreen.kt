@@ -160,6 +160,7 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                     major = user?.institute ?: "—",
                     code = user?.classCode ?: "—",
                     avatarUrl = user?.photoUrl,
+                    isOwner = true,
                     onEditClick = { /* TODO: sửa thông tin */ },
                     onShareClick = { /* TODO: chia sẻ profile */ }
                 )

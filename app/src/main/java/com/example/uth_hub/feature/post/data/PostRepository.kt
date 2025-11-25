@@ -112,6 +112,28 @@ class PostRepository(
         }.await()
     }
 
+    suspend fun toggleCommentLike(postId: String, commentId: String) {
+        val uid = auth.currentUser?.uid ?: return
+
+        val commentDoc = postsCol.document(postId)
+            .collection("comments")
+            .document(commentId)
+
+        val likeDoc = commentDoc.collection("likes").document(uid)
+
+        db.runTransaction { tr ->
+            val liked = tr.get(likeDoc).exists()
+            if (liked) {
+                tr.delete(likeDoc)
+                tr.update(commentDoc, "likeCount", FieldValue.increment(-1))
+            } else {
+                tr.set(likeDoc, mapOf("createdAt" to FieldValue.serverTimestamp()))
+                tr.update(commentDoc, "likeCount", FieldValue.increment(1))
+            }
+        }.await()
+    }
+
+
     // === SAVED IDS STREAM (nếu cần) ===
     fun savedIdsFlow(uid: String) = callbackFlow<Set<String>> {
         val ref = db.collection("users").document(uid).collection("saves")
@@ -146,7 +168,10 @@ class PostRepository(
     }
 
     //Helper chuyển DocumentSnapshot → CommentModel
-    private fun docToComment(postId: String, d: com.google.firebase.firestore.DocumentSnapshot): CommentModel =
+    private fun docToComment(
+        postId: String,
+        d: com.google.firebase.firestore.DocumentSnapshot
+    ): CommentModel =
         CommentModel(
             id = d.id,
             postId = postId,
@@ -154,8 +179,18 @@ class PostRepository(
             authorName = d.getString("authorName") ?: "",
             authorAvatarUrl = d.getString("authorAvatarUrl") ?: "",
             text = d.getString("text") ?: "",
-            createdAt = d.getTimestamp("createdAt")
+            createdAt = d.getTimestamp("createdAt"),
+
+            parentCommentId = d.getString("parentCommentId"),
+            likeCount = d.getLong("likeCount") ?: 0L,
+            replyCount = d.getLong("replyCount") ?: 0L,
+            mediaUrls = (d.get("mediaUrls") as? List<*>)?.filterIsInstance<String>()
+                ?: emptyList(),
+            mediaType = d.getString("mediaType"),
+
+            likedByMe = false  // client set, không lưu DB
         )
+
 
     //Flow listen comments của 1 post
 
@@ -178,7 +213,13 @@ class PostRepository(
     }
 
     // thêm comment
-    suspend fun addComment(postId: String, text: String) {
+    suspend fun addComment(
+        postId: String,
+        text: String,
+        parentCommentId: String? = null,
+        mediaUris: List<Uri> = emptyList(),
+        mediaType: String? = null
+    ) {
         val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not logged in")
 
         // Lấy thông tin user để gắn vào comment
@@ -193,23 +234,49 @@ class PostRepository(
             ?: auth.currentUser?.photoUrl?.toString()
             ?: ""
 
-        val commentsCol = postsCol.document(postId).collection("comments")
+        val postDoc = postsCol.document(postId)
+        val commentsCol = postDoc.collection("comments")
 
-        val data = mapOf(
+        // Tạo docRef trước để có id cho folder Storage
+        val newCommentRef = commentsCol.document()
+
+        // 🔹 Upload media nếu có
+        val mediaUrls = mutableListOf<String>()
+        for (uri in mediaUris) {
+            val fileName =
+                "comments/$postId/${newCommentRef.id}/${System.currentTimeMillis()}_${uri.lastPathSegment}"
+            val ref = storage.reference.child(fileName)
+            ref.putFile(uri).await()
+            mediaUrls += ref.downloadUrl.await().toString()
+        }
+
+        val data = mutableMapOf<String, Any?>(
             "authorId" to uid,
             "authorName" to authorName,
             "authorAvatarUrl" to avatarUrl,
             "text" to text,
-            "createdAt" to FieldValue.serverTimestamp()
+            "createdAt" to FieldValue.serverTimestamp(),
+            "parentCommentId" to parentCommentId,
+            "likeCount" to 0L,
+            "replyCount" to 0L,
+            "mediaUrls" to mediaUrls,
+            "mediaType" to mediaType
         )
 
-        // Tạo comment + tăng commentCount
-        val postDoc = postsCol.document(postId)
         db.runTransaction { tr ->
-            tr.set(commentsCol.document(), data)
+            tr.set(newCommentRef, data)
+
+            // tăng tổng comment của post
             tr.update(postDoc, "commentCount", FieldValue.increment(1))
+
+            // nếu là reply → tăng replyCount của comment cha
+            if (!parentCommentId.isNullOrEmpty()) {
+                val parentRef = commentsCol.document(parentCommentId)
+                tr.update(parentRef, "replyCount", FieldValue.increment(1))
+            }
         }.await()
     }
+
 
 
 

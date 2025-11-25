@@ -14,6 +14,8 @@ object Routes {
     const val ChangePassword = "change_password"
     const val AboutTerms = "about_terms"
     const val PostComment = "postComment"
+    const val OtherProfile = "otherProfile"
+
 
 
 }

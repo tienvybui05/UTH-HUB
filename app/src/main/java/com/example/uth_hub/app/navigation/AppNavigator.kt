@@ -24,6 +24,8 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import com.example.uth_hub.feature.profile.ui.OtherProfileScreen
+
 
 object AuthRoutes {
     const val Splash = "auth/splash"
@@ -229,6 +231,11 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 val postId = backStack.arguments?.getString("postId") ?: ""
                 PostCommentScreen(navController = navController, postId = postId)
             }
+            composable("${Routes.OtherProfile}/{uid}") { backStackEntry ->
+                // OtherProfileScreen dùng viewModel() với SavedStateHandle để tự lấy uid
+                OtherProfileScreen(navController = navController)
+            }
+
         }
     }
 }

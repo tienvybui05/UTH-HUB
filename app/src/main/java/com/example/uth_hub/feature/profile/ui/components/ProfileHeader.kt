@@ -30,12 +30,13 @@ import com.example.uth_hub.core.design.theme.ColorCustom
 @Composable
 fun ProfileHeader(
     name: String?,
-    username: String?,           // có thể truyền MSSV ở đây
+    username: String?,           // MSSV
     major: String?,
     code: String?,
+    isOwner: Boolean,            //  true = profile mình, false = profile người khác
+    onShareClick: () -> Unit,    // luôn dùng
     avatarUrl: String? = null,   // url ảnh đại diện
-    onEditClick: () -> Unit,
-    onShareClick: () -> Unit,
+    onEditClick: () -> Unit = {},// chỉ dùng khi isOwner = true
 ) {
     Box(
         modifier = Modifier
@@ -84,8 +85,10 @@ fun ProfileHeader(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        // Nếu bạn truyền MSSV ở username thì bỏ dấu @ cho hợp lý
-                        text = username?.let { if (it.all(Char::isDigit)) it else "@$it" }.orEmpty().ifBlank { "—" },
+                        text = username
+                            ?.let { if (it.all(Char::isDigit)) it else "@$it" }
+                            .orEmpty()
+                            .ifBlank { "—" },
                         fontSize = 14.sp,
                         color = Color.White.copy(alpha = 0.9f),
                         maxLines = 1,
@@ -126,27 +129,53 @@ fun ProfileHeader(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedButton(
-                    onClick = onEditClick,
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, Color.White),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = Color.White
-                    ),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(36.dp)
+            //Phân nhánh: nếu là owner → 2 nút; nếu là người khác → chỉ 1 nút Chia sẻ
+            if (isOwner) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Chỉnh sửa trang cá nhân", fontSize = 13.sp, fontWeight = FontWeight.Medium)
-                }
+                    OutlinedButton(
+                        onClick = onEditClick,
+                        shape = RoundedCornerShape(6.dp),
+                        border = BorderStroke(1.dp, Color.White),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = Color.White
+                        ),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(36.dp)
+                    ) {
+                        Text(
+                            "Chỉnh sửa trang cá nhân",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
 
+                    OutlinedButton(
+                        onClick = onShareClick,
+                        shape = RoundedCornerShape(6.dp),
+                        border = BorderStroke(1.dp, Color.White),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = Color.White
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(36.dp)
+                    ) {
+                        Text(
+                            "Chia sẻ trang cá nhân",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            } else {
                 OutlinedButton(
                     onClick = onShareClick,
                     shape = RoundedCornerShape(6.dp),
@@ -156,10 +185,14 @@ fun ProfileHeader(
                         contentColor = Color.White
                     ),
                     modifier = Modifier
-                        .weight(1f)
+                        .fillMaxWidth()
                         .height(36.dp)
                 ) {
-                    Text("Chia sẻ trang cá nhân", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(
+                        "Chia sẻ trang cá nhân",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
         }
@@ -175,9 +208,10 @@ fun ProfileHeader(
 //            username = "051205011574",
 //            major = "Viện CNTT & Điện, điện tử",
 //            code = "CN2301C",
-//            avatarUrl = null, // thử null để thấy ảnh mặc định
-//            onEditClick = {},
-//            onShareClick = {}
+//            isOwner = true,
+//            onShareClick = {},
+//            avatarUrl = null,
+//            onEditClick = {}
 //        )
 //    }
 //}

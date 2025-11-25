@@ -19,8 +19,6 @@ import com.example.uth_hub.feature.post.domain.model.PostModel
 import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
 
-
-
 @Composable
 fun PostCommentBody(
     modifier: Modifier = Modifier,
@@ -28,7 +26,10 @@ fun PostCommentBody(
     comments: List<CommentModel>,
     loading: Boolean,
     onToggleLike: () -> Unit,
-    onToggleSave: () -> Unit
+    onToggleSave: () -> Unit,
+    onCommentLike: (CommentModel) -> Unit,
+    onReplyClick: (CommentModel) -> Unit,
+    onOpenProfile: (String) -> Unit
 ) {
     if (loading && post == null) {
         Box(
@@ -49,7 +50,12 @@ fun PostCommentBody(
             onToggleSave = onToggleSave
         )
 
-        CommentsListSection(comments = comments)
+        CommentsListSection(
+            comments = comments,
+            onCommentLike = onCommentLike,
+            onReplyClick = onReplyClick,
+            onOpenProfile = onOpenProfile
+        )
     }
 }
 
@@ -79,7 +85,10 @@ fun PostDetailSection(
 // Danh sách comment
 @Composable
 fun CommentsListSection(
-    comments: List<CommentModel>
+    comments: List<CommentModel>,
+    onCommentLike: (CommentModel) -> Unit,
+    onReplyClick: (CommentModel) -> Unit,
+    onOpenProfile: (String) -> Unit
 ) {
     // ⏱ 1 timer duy nhất cho cả list comment
     var nowMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -89,6 +98,16 @@ fun CommentsListSection(
             delay(60_000L)                    // mỗi 60 giây
             nowMillis = System.currentTimeMillis()
         }
+    }
+
+    // group reply theo parent
+    val rootComments = remember(comments) {
+        comments.filter { it.parentCommentId.isNullOrEmpty() }
+    }
+    val repliesByParent = remember(comments) {
+        comments
+            .filter { !it.parentCommentId.isNullOrEmpty() }
+            .groupBy { it.parentCommentId!! }
     }
 
     LazyColumn(
@@ -109,11 +128,34 @@ fun CommentsListSection(
                 }
             }
         } else {
-            items(comments, key = { it.id }) { c ->
+            items(rootComments, key = { it.id }) { c ->
                 CommentItem(
                     comment = c,
-                    nowMillis = nowMillis   // 👈 truyền xuống
+                    nowMillis = nowMillis,   //  truyền xuống
+                    onOpenProfile = onOpenProfile,
+                    onLikeClick = onCommentLike,
+                    onReplyClick = onReplyClick
                 )
+
+                // hiển thị các reply (nếu có)
+                val replies = repliesByParent[c.id].orEmpty()
+                if (replies.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 48.dp)
+                    ) {
+                        replies.forEach { r ->
+                            CommentItem(
+                                comment = r,
+                                nowMillis = nowMillis,
+                                onOpenProfile = onOpenProfile,
+                                onLikeClick = onCommentLike,
+                                onReplyClick = onReplyClick
+                            )
+                        }
+                    }
+                }
             }
         }
     }
