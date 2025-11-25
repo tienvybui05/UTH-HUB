@@ -1,4 +1,4 @@
-package com.example.uth_hub.core.design.components
+package com.example.uth_hub.feature.post.ui.component
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
 import com.example.uth_hub.R
 import com.example.uth_hub.core.design.theme.ColorCustom
+import com.example.uth_hub.feature.post.domain.model.PostModel
 import compose.icons.FontAwesomeIcons
 import compose.icons.fontawesomeicons.Regular
 import compose.icons.fontawesomeicons.Solid
@@ -53,7 +54,7 @@ import java.util.Locale
 
 @Composable
 fun PostItem(
-    postModel: com.example.uth_hub.feature.post.domain.model.PostModel,
+    postModel: PostModel,
     onLike: () -> Unit,
     onComment: () -> Unit,
     onSave: () -> Unit

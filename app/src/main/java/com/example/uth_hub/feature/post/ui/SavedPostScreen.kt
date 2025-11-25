@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.uth_hub.app.navigation.Routes
-import com.example.uth_hub.core.design.components.PostItem
+import com.example.uth_hub.feature.post.ui.component.PostItem
 import com.example.uth_hub.feature.post.di.PostDI
 import com.example.uth_hub.feature.post.viewmodel.SavedPostsViewModel
 import com.example.uth_hub.feature.post.viewmodel.SavedPostsViewModelFactory

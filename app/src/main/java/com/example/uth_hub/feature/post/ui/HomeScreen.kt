@@ -25,7 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberAsyncImagePainter
 import com.example.uth_hub.R
 import com.example.uth_hub.core.design.components.DrawerMenu
-import com.example.uth_hub.core.design.components.PostItem
+import com.example.uth_hub.feature.post.ui.component.PostItem
 import com.example.uth_hub.core.design.theme.ColorCustom
 import com.example.uth_hub.core.design.theme.Uth_hubTheme
 import com.example.uth_hub.feature.post.di.PostDI
