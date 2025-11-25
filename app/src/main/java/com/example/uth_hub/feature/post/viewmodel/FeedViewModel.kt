@@ -162,4 +162,30 @@ class FeedViewModel(
             }
         }
     }
+    fun deletePost(postId: String) {
+        val deletedPost = _posts.value.find { it.id == postId }
+        _posts.value = _posts.value.filter { it.id != postId }
+
+        viewModelScope.launch {
+            try {
+                println("🔄 Bắt đầu xóa bài viết: $postId")
+                repo.deletePost(postId)
+                println("✅ Xóa bài viết $postId thành công từ ViewModel")
+            } catch (e: Exception) {
+                println("❌ Lỗi khi xóa bài viết $postId: ${e.message}")
+                e.printStackTrace()
+
+                if (deletedPost != null) {
+                    _posts.value = _posts.value + deletedPost
+                    println("🔄 Đã rollback bài viết $postId")
+                }
+                _error.value = "Lỗi khi xóa bài viết: ${e.message}"
+            }
+        }
+    }
+
+    // Hàm để refresh feed (nếu cần)
+    fun loadPosts() {
+        observeFeed()
+    }
 }

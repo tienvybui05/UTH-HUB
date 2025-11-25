@@ -1,6 +1,5 @@
 package com.example.uth_hub.feature.admin.ui
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,18 +35,19 @@ import compose.icons.fontawesomeicons.solid.Clock
 import compose.icons.fontawesomeicons.solid.ExclamationTriangle
 import compose.icons.fontawesomeicons.solid.Heart
 import compose.icons.fontawesomeicons.solid.Trash
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun AdminPostItem(
     post: PostModel,
     onDeletePost: (String) -> Unit,
-    onViewReports: (String) -> Unit
+    onViewReports: (String) -> Unit,
+    isLoading: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var isLiked by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Giả sử mỗi bài viết có số lượt báo cáo
     val reportCount by remember(post.id) { mutableStateOf(0) }
 
     // Dialog xác nhận xóa
@@ -152,7 +151,7 @@ fun AdminPostItem(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = post.createdAt?.toDate()?.toString()?.substring(0, 10) ?: "Không xác định",
+                            text = formatPostDate(post.createdAt),
                             fontSize = 13.sp,
                             lineHeight = 14.sp,
                             color = Color(0xFF595959)
@@ -283,7 +282,7 @@ fun AdminPostItem(
                     Icon(
                         imageVector = FontAwesomeIcons.Solid.Heart,
                         contentDescription = "Thích",
-                        tint = if (isLiked) Color.Red else ColorCustom.secondText,
+                        tint = if (post.likedByMe) Color.Red else ColorCustom.secondText,
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
@@ -323,7 +322,7 @@ fun AdminPostItem(
                     Icon(
                         imageVector = FontAwesomeIcons.Regular.Bookmark,
                         contentDescription = "Lưu",
-                        tint = ColorCustom.secondText,
+                        tint = if (post.savedByMe) ColorCustom.primary else ColorCustom.secondText,
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
@@ -362,12 +361,45 @@ fun AdminPostItem(
                     onClick = { showDeleteDialog = true },
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFF4646) // Màu đỏ để cảnh báo nguy hiểm
-                    )
+                        containerColor = Color(0xFFFF4646)
+                    ),
+                    enabled = !isLoading
                 ) {
-                    Text(text = "Xóa bài", color = Color.White, fontWeight = FontWeight.Bold)
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(text = "Xóa bài", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
+        }
+    }
+}
+
+// Hàm format ngày đăng
+@Composable
+private fun formatPostDate(timestamp: com.google.firebase.Timestamp?): String {
+    return remember(timestamp) {
+        if (timestamp != null) {
+            val date = timestamp.toDate()
+            val now = Date()
+            val diff = now.time - date.time
+
+            when {
+                diff < 60000 -> "Vừa xong"
+                diff < 3600000 -> "${diff / 60000} phút trước"
+                diff < 86400000 -> "${diff / 3600000} giờ trước"
+                else -> {
+                    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                    formatter.format(date)
+                }
+            }
+        } else {
+            "Không xác định"
         }
     }
 }
