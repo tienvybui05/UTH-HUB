@@ -1,8 +1,5 @@
 {
   "projects": {
-    "default": "uth-hub-49b77",
-    "duy": "uth-hub-49b77"
-  },
-  "targets": {},
-  "etags": {}
+    "default": "uth-hub-49b77"
+  }
 }
