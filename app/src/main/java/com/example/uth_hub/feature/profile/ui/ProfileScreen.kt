@@ -23,11 +23,7 @@ import com.example.uth_hub.feature.profile.ui.components.TopBarSimple
 import com.example.uth_hub.feature.profile.ui.components.ChangeAvatarSheet
 import com.example.uth_hub.feature.profile.util.rememberAvatarPicker
 import com.example.uth_hub.feature.profile.viewmodel.ProfileViewModel
-import com.example.uth_hub.deeplink.AppLinkConfig
-import com.example.uth_hub.feature.auth.AuthConst
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
+import com.example.uth_hub.feature.deeplink.AppLinkConfig
 
 @Composable
 fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
@@ -89,7 +85,7 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                     navController.navigate(Routes.LikedPost)
                 },
 
-                // 👉 Thay đổi ảnh đại diện
+                //  Thay đổi ảnh đại diện
                 onGoChangeAvatar = {
                     showSettings = false
                     showChangeAvatar = true

@@ -1,4 +1,4 @@
-package com.example.uth_hub.deeplink
+package com.example.uth_hub.feature.deeplink
 
 object AppLinkConfig {
     const val BASE_SCHEME = "https"

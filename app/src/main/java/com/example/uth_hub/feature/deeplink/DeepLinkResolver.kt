@@ -1,4 +1,4 @@
-package com.example.uth_hub.deeplink
+package com.example.uth_hub.feature.deeplink
 
 import android.net.Uri
 

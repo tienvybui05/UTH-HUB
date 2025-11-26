@@ -46,7 +46,7 @@ fun NavGraph(
     val auth = remember { FirebaseAuth.getInstance() }
     var isLoggedIn by remember { mutableStateOf(auth.currentUser != null) }
 
-    // 🔥 Listen trạng thái login realtime
+    // Listen trạng thái login realtime
     DisposableEffect(Unit) {
         val listener = FirebaseAuth.AuthStateListener { fb ->
             isLoggedIn = fb.currentUser != null
@@ -61,7 +61,8 @@ fun NavGraph(
             Routes.CreatePost,
             Routes.Notification,
             Routes.Profile,
-            Routes.ManagerProfile
+            Routes.ManagerProfile,
+            Routes.OtherProfile
         )
     }
 
