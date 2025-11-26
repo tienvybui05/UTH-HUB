@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>UTHHub Redirect</title>
+
+    <script>
+        window.onload = function () {
+          const path = window.location.pathname; // /user/abc123
+          const userId = path.split("/")[2];    // abc123
+
+          // Mở app với custom scheme
+          window.location = "uthhub://user/" + userId;
+
+          // Nếu app không cài → mở Play Store sau 2s
+          setTimeout(() => {
+            window.location = "https://play.google.com/store/apps/details?id=com.example.uth_hub";
+          }, 2000);
+        };
+    </script>
+</head>
+<body>
+<h2>Đang mở UTH-Hub…</h2>
+</body>
+</html>

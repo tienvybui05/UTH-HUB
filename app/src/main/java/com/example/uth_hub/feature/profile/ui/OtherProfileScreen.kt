@@ -11,35 +11,34 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.uth_hub.feature.profile.ui.components.ProfileHeader
-import com.example.uth_hub.feature.profile.ui.components.ProfileTabBar
-import com.example.uth_hub.feature.profile.ui.components.TopBarSimple
 import com.example.uth_hub.feature.profile.viewmodel.OtherProfileUiState
 import com.example.uth_hub.feature.profile.viewmodel.OtherProfileViewModel
 import com.example.uth_hub.feature.profile.viewmodel.OtherProfileViewModelFactory
+import com.example.uth_hub.feature.profile.ui.components.ProfileHeader
+import com.example.uth_hub.feature.profile.ui.components.ProfileTabBar
+import com.example.uth_hub.feature.profile.ui.components.TopBarSimple
 
 @Composable
 fun OtherProfileScreen(
     navController: NavController,
-    uid: String, // 🔹 nhận uid từ NavGraph
+    uid: String,
 ) {
-    // 🔹 ViewModel dùng Factory để nhận uid
     val vm: OtherProfileViewModel = viewModel(
         factory = OtherProfileViewModelFactory(uid)
     )
 
-    var selectedTabIndex by remember { mutableStateOf(0) }
-
     val ui: OtherProfileUiState = vm.ui.collectAsState().value
     val user = ui.user
+
+    var selectedTabIndex by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
             TopBarSimple(
                 onBackClick = { navController.navigateUp() },
-                onMenuClick = { /* nếu muốn mở drawer thì truyền callback */ }
+                onMenuClick = { }
             )
-        },
+        }
     ) { innerPadding ->
 
         if (ui.loading) {
@@ -60,6 +59,7 @@ fun OtherProfileScreen(
                 .padding(innerPadding),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             // HEADER
             item {
                 ProfileHeader(
@@ -68,12 +68,12 @@ fun OtherProfileScreen(
                     major = user?.institute ?: "—",
                     code = user?.classCode ?: "—",
                     avatarUrl = user?.photoUrl,
-                    isOwner = false,                   //  profile người khác → chỉ 1 nút chia sẻ
-                    onShareClick = { vm.shareProfile(user) } // hoặc nav/intent share
+                    isOwner = false,
+                    onShareClick = { vm.shareProfile(user) }
                 )
             }
 
-            // TAB BAR: Bài đăng / File phương tiện
+            // TAB BAR
             stickyHeader {
                 Box(
                     modifier = Modifier
@@ -90,20 +90,21 @@ fun OtherProfileScreen(
             item { Spacer(Modifier.height(10.dp)) }
 
             when (selectedTabIndex) {
+
+                // TAB 0 – chỉ hiển thị text placeholder
                 0 -> item {
-                    // TODO: hiển thị list bài viết của user này
                     Column(
                         Modifier
                             .fillMaxWidth()
                             .padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Chưa có bài viết", color = Color.White)
+                        Text("Chưa có bài đăng", color = Color.White)
                     }
                 }
 
+                // TAB 1 – media
                 1 -> item {
-                    // TODO: hiển thị list ảnh/video của user này
                     Column(
                         Modifier
                             .fillMaxWidth()

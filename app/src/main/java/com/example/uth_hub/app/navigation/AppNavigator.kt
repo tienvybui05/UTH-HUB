@@ -8,42 +8,45 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.navDeepLink
 import com.example.uth_hub.feature.admin.ui.*
 import com.example.uth_hub.feature.auth.ui.*
 import com.example.uth_hub.feature.notifications.ui.NotificationsScreen
 import com.example.uth_hub.feature.post.ui.*
 import com.example.uth_hub.feature.profile.ui.Profile
 import com.example.uth_hub.feature.profile.ui.AboutTermsScreen
+import com.example.uth_hub.feature.profile.ui.OtherProfileScreen
+import com.example.uth_hub.feature.auth.AuthConst
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.example.uth_hub.feature.auth.AuthConst
 import java.net.URLDecoder
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import com.example.uth_hub.feature.profile.ui.OtherProfileScreen
-
+import kotlinx.coroutines.tasks.await
 
 object AuthRoutes {
     const val Splash = "auth/splash"
     const val SignIn = "auth/signin"
     const val SignUp = "auth/signup"
     const val Forgot = "auth/forgot"
-    const val OtpReset = "auth/otp_reset"            // + /{email}
-    const val Reset = "auth/reset"                   // + /{email}
-    const val CompleteProfile = "auth/complete_profile" // + /{email}
+    const val OtpReset = "auth/otp_reset"
+    const val Reset = "auth/reset"
+    const val CompleteProfile = "auth/complete_profile"
 }
 
-
-
 @Composable
-fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
+fun NavGraph(
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+    startDeepLink: String? = null
+) {
     val auth = remember { FirebaseAuth.getInstance() }
     var isLoggedIn by remember { mutableStateOf(auth.currentUser != null) }
 
+    // 🔥 Listen trạng thái login realtime
     DisposableEffect(Unit) {
         val listener = FirebaseAuth.AuthStateListener { fb ->
             isLoggedIn = fb.currentUser != null
@@ -53,13 +56,24 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     }
 
     val bottomBarRoutes = remember {
-        setOf(Routes.HomeScreen, Routes.CreatePost, Routes.Notification, Routes.Profile, Routes.ManagerProfile, Routes.OtherProfile)
+        setOf(
+            Routes.HomeScreen,
+            Routes.CreatePost,
+            Routes.Notification,
+            Routes.Profile,
+            Routes.ManagerProfile
+        )
     }
+
     val authRoutes = remember {
         setOf(
-            AuthRoutes.Splash, AuthRoutes.SignIn, AuthRoutes.SignUp,
-            AuthRoutes.Forgot, "${AuthRoutes.OtpReset}/{email}",
-            "${AuthRoutes.Reset}/{email}", "${AuthRoutes.CompleteProfile}/{email}"
+            AuthRoutes.Splash,
+            AuthRoutes.SignIn,
+            AuthRoutes.SignUp,
+            AuthRoutes.Forgot,
+            "${AuthRoutes.OtpReset}/{email}",
+            "${AuthRoutes.Reset}/{email}",
+            "${AuthRoutes.CompleteProfile}/{email}"
         )
     }
 
@@ -69,24 +83,32 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     val showBottomBar =
         isLoggedIn &&
                 currentRoute != null &&
-                authRoutes.none { pattern -> currentRoute.startsWith(pattern.substringBefore("/{")) } &&
-                bottomBarRoutes.any { pattern -> currentRoute.startsWith(pattern.substringBefore("/{")) }
+                authRoutes.none { pattern ->
+                    currentRoute.startsWith(pattern.substringBefore("/{"))
+                } &&
+                bottomBarRoutes.any { pattern ->
+                    currentRoute.startsWith(pattern.substringBefore("/{"))
+                }
 
-    val startDest = AuthRoutes.Splash
+    val startDest = startDeepLink ?: AuthRoutes.Splash
 
     Scaffold(
         bottomBar = { if (showBottomBar) BottomNavigationBar(navController) }
     ) { innerPadding ->
+
         NavHost(
             navController = navController,
             startDestination = startDest,
             modifier = modifier.padding(innerPadding)
         ) {
-            // ===== AUTH =====
+
+            // ============================
+            // AUTH
+            // ============================
             composable(AuthRoutes.Splash) {
                 SplashScreen(
                     onFinish = {
-                        val user = FirebaseAuth.getInstance().currentUser
+                        val user = auth.currentUser
                         val db = FirebaseFirestore.getInstance()
 
                         if (user == null) {
@@ -99,7 +121,9 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                                         .get()
                                         .await()
 
-                                    if (!doc.exists() || doc.getString("mssv").isNullOrEmpty()) {
+                                    if (!doc.exists() ||
+                                        doc.getString("mssv").isNullOrEmpty()
+                                    ) {
                                         val e = URLEncoder.encode(
                                             user.email,
                                             StandardCharsets.UTF_8.toString()
@@ -110,18 +134,16 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                                     } else {
                                         val role = doc.getString("role") ?: UserRole.STUDENT
                                         if (role == UserRole.ADMIN) {
-                                            // admin vào trang quản lý
                                             navController.navigate(Routes.ManagerProfile) {
                                                 popUpTo(0)
                                             }
                                         } else {
-                                            // student vào home
                                             navController.navigate(Routes.HomeScreen) {
                                                 popUpTo(0)
                                             }
                                         }
                                     }
-                                } catch (e: Exception) {
+                                } catch (_: Exception) {
                                     navController.navigate(AuthRoutes.SignIn) { popUpTo(0) }
                                 }
                             }
@@ -171,7 +193,6 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 )
             }
 
-
             composable("${AuthRoutes.Reset}/{email}") {
                 ResetPasswordScreen(
                     onResetDone = {
@@ -180,14 +201,16 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 )
             }
 
-            // ===== APP =====
+            // ============================
+            // APP MAIN
+            // ============================
             composable(Routes.HomeScreen) { HomeScreen(navController) }
             composable(Routes.CreatePost) { CreatePost(navController) }
             composable(Routes.Notification) { NotificationsScreen(navController) }
 
-            // tách rõ giữa student và admin khi vào trang cá nhân
+            // Profile tự nhận biết ADMIN / STUDENT
             composable(Routes.Profile) {
-                val user = FirebaseAuth.getInstance().currentUser
+                val user = auth.currentUser
                 val db = FirebaseFirestore.getInstance()
                 var role by remember { mutableStateOf<String?>(null) }
 
@@ -204,15 +227,14 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 when (role) {
                     UserRole.ADMIN -> ManagerProfile(navController)
                     UserRole.STUDENT -> Profile(navController)
-                    else -> Profile(navController) // fallback
+                    else -> Profile(navController)
                 }
             }
 
-            // Giới thiệu & Điều khoản
             composable(Routes.AboutTerms) {
                 AboutTermsScreen(navController)
             }
-            // Màn đổi mật khẩu
+
             composable(Routes.ChangePassword) {
                 ResetPasswordScreen(
                     onResetDone = { navController.popBackStack() },
@@ -220,7 +242,9 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 )
             }
 
-            // ===== ADMIN / OTHER =====
+            // ============================
+            // OTHERS / ADMIN
+            // ============================
             composable(Routes.PostManagement) { PostManagement(navController) }
             composable(Routes.ManagerProfile) { ManagerProfile(navController) }
             composable(Routes.ManagerStudent) { ManagerStudent(navController) }
@@ -228,18 +252,31 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
             composable(Routes.LikedPost) { LikedPostScreen(navController) }
             composable(Routes.SavedPost) { SavePostScreen(navController) }
             composable("${Routes.PostComment}/{postId}") { backStack ->
-                val postId = backStack.arguments?.getString("postId") ?: ""
-                PostCommentScreen(navController = navController, postId = postId)
-            }
-            composable("${Routes.OtherProfile}/{uid}") { backStackEntry ->
-                // Lấy uid từ arguments và truyền xuống OtherProfileScreen
-                val uid = backStackEntry.arguments?.getString("uid") ?: ""
-                OtherProfileScreen(
-                    navController = navController,
-                    uid = uid
-                )
+                val id = backStack.arguments?.getString("postId") ?: ""
+                PostCommentScreen(navController, id)
             }
 
+            // ============================
+            // 🔥 OTHER PROFILE (MERGE OK)
+            // – Hỗ trợ deep link + check owner
+            // ============================
+            composable(
+                route = "otherProfile/{uid}",
+                deepLinks = listOf(
+                    navDeepLink {
+                        uriPattern = "https://uth-hub-49b77.web.app/user/{uid}"
+                    }
+                )
+            ) { entry ->
+                val uid = entry.arguments?.getString("uid") ?: ""
+                val current = auth.currentUser?.uid
+
+                if (uid == current) {
+                    Profile(navController)
+                } else {
+                    OtherProfileScreen(navController, uid)
+                }
+            }
         }
     }
 }

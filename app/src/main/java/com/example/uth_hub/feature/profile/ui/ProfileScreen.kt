@@ -18,10 +18,12 @@ import com.example.uth_hub.app.navigation.Routes
 import com.example.uth_hub.feature.profile.ui.components.ProfileHeader
 import com.example.uth_hub.feature.profile.ui.components.ProfileTabBar
 import com.example.uth_hub.feature.profile.ui.components.SettingsSheet
+import com.example.uth_hub.feature.profile.ui.components.ShareProfileSheet
 import com.example.uth_hub.feature.profile.ui.components.TopBarSimple
 import com.example.uth_hub.feature.profile.ui.components.ChangeAvatarSheet
 import com.example.uth_hub.feature.profile.util.rememberAvatarPicker
 import com.example.uth_hub.feature.profile.viewmodel.ProfileViewModel
+import com.example.uth_hub.deeplink.AppLinkConfig
 import com.example.uth_hub.feature.auth.AuthConst
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -32,8 +34,10 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
     var selectedTabIndex by remember { mutableStateOf(0) }
     var showSettings by remember { mutableStateOf(false) }      // sheet cài đặt
     var showChangeAvatar by remember { mutableStateOf(false) }  // sheet đổi avatar
+    var showShareProfile by remember { mutableStateOf(false) }
 
     val ui = vm.ui.collectAsState().value
+    val user = ui.user
 
     // role: nếu là admin thì chuyển sang màn admin profile
     val userRole = ui.user?.role ?: "student"
@@ -104,7 +108,7 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                 },
 
 
-                        // Logout
+                // Logout
                 onLogout = {
                     showSettings = false
                     vm.signOut()
@@ -115,7 +119,14 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                 }
             )
         }
-
+        // *** SHEET CHIA SẺ TRANG CÁ NHÂN ***
+        if (showShareProfile) {
+            ShareProfileSheet(
+                usernameOrMssv = user?.displayName ?: "",
+                profileUrl = AppLinkConfig.buildProfileUrl(user?.uid ?: ""),
+                onDismissRequest = { showShareProfile = false }
+            )
+        }
         // *** SHEET ĐỔI AVATAR ***
         if (showChangeAvatar) {
             ChangeAvatarSheet(
@@ -162,7 +173,7 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                     avatarUrl = user?.photoUrl,
                     isOwner = true,
                     onEditClick = { /* TODO: sửa thông tin */ },
-                    onShareClick = { /* TODO: chia sẻ profile */ }
+                    onShareClick = { showShareProfile = true }
                 )
             }
 

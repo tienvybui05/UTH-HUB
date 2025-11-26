@@ -119,5 +119,6 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
-
+    //deeplink
+    implementation("com.google.zxing:core:3.5.3")
 }
