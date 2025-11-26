@@ -21,6 +21,10 @@ exports.onPostLiked = onDocumentCreated(
       const post = await admin.firestore().collection("posts").doc(postId).get();
       const postOwnerId = post.data()?.authorId;
 
+      // Không gửi nếu chủ bài tự like bài của mình
+      if (postOwnerId === userId) return;
+
+
       // Lấy token chủ bài
       const owner = await admin.firestore().collection("users").doc(postOwnerId).get();
       const fcmToken = owner.data()?.fcmToken;

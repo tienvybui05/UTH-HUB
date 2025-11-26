@@ -26,7 +26,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.uth_hub.R
 
-// Dữ liệu mô phỏng cho từng thông báo
 data class NotificationItem(
     val userName: String,
     val time: String,
@@ -36,34 +35,15 @@ data class NotificationItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(navController: NavController) {
-    // Danh sách thông báo
-    val notifications = remember {
-        listOf(
-            NotificationItem("@tienvybui05", "15 giờ", "Đã thích bài viết của bạn."),
-            NotificationItem("@dinhquocdat", "9 giờ", "Đã thích bài viết của bạn."),
-            NotificationItem("@tienvybui05", "15 giờ", "Đã bình luận bài viết của bạn."),
-            NotificationItem("@LuongITzu", "3 giờ", "Đã thích bài viết của bạn."),
-            NotificationItem("@dinhquocdat", "1 giờ", "Đã lưu bài viết của bạn."),
-            NotificationItem("@dinhquocdat", "2 giờ", "Đã bình luận bài viết của bạn."),
-            NotificationItem("@LuongITzu", "3 giờ", "Đã lưu bài viết của bạn."),
-            NotificationItem("@dinhquocdat", "1 giờ", "Đã lưu bài viết của bạn."),
-            NotificationItem("@dinhquocdat", "2 giờ", "Đã bình luận bài viết của bạn."),
-            NotificationItem("@LuongITzu", "3 giờ", "Đã lưu bài viết của bạn."),
-            NotificationItem("@tienvybui05", "15 giờ", "Đã thích bài viết của bạn."),
-            NotificationItem("@dinhquocdat", "9 giờ", "Đã thích bài viết của bạn."),
-            NotificationItem("@tienvybui05", "15 giờ", "Đã bình luận bài viết của bạn."),
-            NotificationItem("@LuongITzu", "3 giờ", "Đã thích bài viết của bạn."),
-            NotificationItem("@dinhquocdat", "1 giờ", "Đã lưu bài viết của bạn."),
-            NotificationItem("@dinhquocdat", "2 giờ", "Đã bình luận bài viết của bạn."),
-        )
-    }
 
-    // Giao diện chính
+    // list rỗng — không thay đổi UI
+    val notifications = remember { emptyList<NotificationItem>() }
+
     Scaffold(
         topBar = {
             Surface(
                 color = Color.White,
-                shadowElevation = 3.dp // hiệu ứng phân tách tự nhiên
+                shadowElevation = 3.dp
             ) {
                 CenterAlignedTopAppBar(
                     navigationIcon = {
@@ -87,7 +67,6 @@ fun NotificationsScreen(navController: NavController) {
             }
         }
     ) { padding ->
-        // LazyColumn để cuộn danh sách
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
@@ -95,6 +74,7 @@ fun NotificationsScreen(navController: NavController) {
                 .background(Color.White),
             contentPadding = PaddingValues(bottom = 12.dp)
         ) {
+            // ❗ Không có items — giữ UI, chỉ danh sách trống
             items(notifications) { item ->
                 NotificationRow(item)
             }
@@ -111,7 +91,6 @@ fun NotificationRow(item: NotificationItem) {
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Ảnh đại diện
         Image(
             painter = painterResource(id = R.drawable.avartardefault),
             contentDescription = "Avatar",
@@ -122,7 +101,6 @@ fun NotificationRow(item: NotificationItem) {
 
         Spacer(modifier = Modifier.width(8.dp))
 
-        // Nội dung thông báo
         Column(modifier = Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(item.userName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
@@ -132,8 +110,7 @@ fun NotificationRow(item: NotificationItem) {
             Text(item.message, fontSize = 14.sp)
         }
 
-        // Nút xóa đỏ
-        IconButton(onClick = { /* TODO: xử lý xóa */ }) {
+        IconButton(onClick = { /* TODO */ }) {
             Icon(
                 imageVector = Icons.Filled.Delete,
                 contentDescription = "Xóa",
@@ -143,7 +120,6 @@ fun NotificationRow(item: NotificationItem) {
     }
 }
 
-// Xem thử giao diện trong Android Studio
 @Preview(showBackground = true, heightDp = 700)
 @Composable
 fun PreviewNotificationsScreen() {
