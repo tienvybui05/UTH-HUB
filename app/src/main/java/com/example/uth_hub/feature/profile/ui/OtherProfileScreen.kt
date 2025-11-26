@@ -17,6 +17,7 @@ import com.example.uth_hub.feature.profile.viewmodel.OtherProfileViewModelFactor
 import com.example.uth_hub.feature.profile.ui.components.ProfileHeader
 import com.example.uth_hub.feature.profile.ui.components.ProfileTabBar
 import com.example.uth_hub.feature.profile.ui.components.TopBarSimple
+import com.example.uth_hub.feature.profile.ui.components.ShareProfileSheet
 
 @Composable
 fun OtherProfileScreen(
@@ -27,10 +28,16 @@ fun OtherProfileScreen(
         factory = OtherProfileViewModelFactory(uid)
     )
 
+    var selectedTabIndex by remember { mutableStateOf(0) }
+
+    // ⭐ THÊM STATE MỞ SHARE SHEET
+    var showShareProfile by remember { mutableStateOf(false) }
+
     val ui: OtherProfileUiState = vm.ui.collectAsState().value
     val user = ui.user
 
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    // ⭐ URL dành cho người khác
+    val profileUrl = "https://uth-hub-49b77.web.app/user/$uid"
 
     Scaffold(
         topBar = {
@@ -38,7 +45,7 @@ fun OtherProfileScreen(
                 onBackClick = { navController.navigateUp() },
                 onMenuClick = { }
             )
-        }
+        },
     ) { innerPadding ->
 
         if (ui.loading) {
@@ -51,6 +58,15 @@ fun OtherProfileScreen(
                 CircularProgressIndicator()
             }
             return@Scaffold
+        }
+
+        // ⭐ SHOW BOTTOM SHEET
+        if (showShareProfile) {
+            ShareProfileSheet(
+                profileUrl = profileUrl,
+                usernameOrMssv = user?.mssv ?: uid,
+                onDismissRequest = { showShareProfile = false }
+            )
         }
 
         LazyColumn(
@@ -69,7 +85,7 @@ fun OtherProfileScreen(
                     code = user?.classCode ?: "—",
                     avatarUrl = user?.photoUrl,
                     isOwner = false,
-                    onShareClick = { vm.shareProfile(user) }
+                    onShareClick = { showShareProfile = true }   // ⭐ MỞ SHEET TẠI ĐÂY
                 )
             }
 
@@ -91,7 +107,6 @@ fun OtherProfileScreen(
 
             when (selectedTabIndex) {
 
-                // TAB 0 – chỉ hiển thị text placeholder
                 0 -> item {
                     Column(
                         Modifier
@@ -103,7 +118,6 @@ fun OtherProfileScreen(
                     }
                 }
 
-                // TAB 1 – media
                 1 -> item {
                     Column(
                         Modifier
