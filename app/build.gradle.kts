@@ -50,6 +50,8 @@ android {
 }
 
 dependencies {
+    implementation("com.google.firebase:firebase-messaging-ktx")
+
 
     implementation(libs.font.awesome)
     implementation(libs.androidx.navigation.compose)

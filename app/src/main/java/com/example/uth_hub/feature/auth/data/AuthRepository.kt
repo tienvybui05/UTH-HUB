@@ -32,6 +32,22 @@ class AuthRepository(
         return GoogleSignIn.getClient(context, gso)
     }
 
+    //  🔥 Thêm hàm cập nhật FCM Token (CHỖ SỬA 1)
+    // ===============================================================
+    private suspend fun updateFcmToken(uid: String) {
+        val token = com.google.firebase.messaging.FirebaseMessaging
+            .getInstance()
+            .token
+            .await()
+
+        db.collection(AuthConst.USERS)
+            .document(uid)
+            .update("fcmToken", token)
+            .await()
+    }
+    // ===============================================================
+
+
     /** Đăng nhập với Google (đã lấy được account từ ActivityResult) */
     suspend fun signInWithGoogle(account: GoogleSignInAccount): Pair<Boolean, AppUser> {
         val email = account.email ?: ""
@@ -53,12 +69,19 @@ class AuthRepository(
                 displayName = user.displayName ?: "",
                 photoUrl = user.photoUrl?.toString(),
                 role = UserRole.STUDENT,
+                fcmToken = null,
                 createdAt = System.currentTimeMillis()
             )
             db.collection(AuthConst.USERS).document(user.uid).set(appUser).await()
+            // 🔥 Cập nhật token ngay sau khi tạo user mới
+            updateFcmToken(user.uid)
             return true to appUser
         }
         val appUser = userDoc.toObject(AppUser::class.java)!!.copy(uid = user.uid)
+        //  🔥 CHỖ SỬA 3 — luôn update token khi user đăng nhập Google
+        // ===============================================================
+        updateFcmToken(user.uid)
+
         return isNew to appUser
     }
 
@@ -96,11 +119,17 @@ class AuthRepository(
         if (snap.isEmpty) throw IllegalArgumentException("MSSV không tồn tại")
         val email = snap.documents.first().getString("email") ?: throw IllegalStateException("Email rỗng")
         auth.signInWithEmailAndPassword(email, password).await()
+        //  🔥 CHỖ SỬA 4 — update FCM token sau khi login MSSV
+        // ===============================================================
+        updateFcmToken(auth.currentUser!!.uid)
     }
 
     suspend fun signInByEmail(email: String, password: String) {
         require(email.endsWith(AuthConst.UTH_DOMAIN)) { "Email phải có đuôi ${AuthConst.UTH_DOMAIN}" }
         auth.signInWithEmailAndPassword(email, password).await()
+        //  🔥 CHỖ SỬA 5 — update FCM token sau khi login email
+        // ===============================================================
+        updateFcmToken(auth.currentUser!!.uid)
     }
 
     fun logout() = auth.signOut()

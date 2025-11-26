@@ -10,5 +10,6 @@ data class AppUser(
     val institute: String? = null,
     val classCode: String? = null,
     val role: String = "student",
+    val fcmToken: String? = null,
     val createdAt: Long = System.currentTimeMillis()
 )
