@@ -42,14 +42,14 @@ fun BottomNavigationBar(navController: NavController) {
     val db = FirebaseFirestore.getInstance()
     var role by remember { mutableStateOf("student") }
 
-    // ✅ Lấy role user hiện tại
+    // Lấy role user hiện tại
     LaunchedEffect(auth.currentUser) {
         val uid = auth.currentUser?.uid ?: return@LaunchedEffect
         val doc = db.collection("users").document(uid).get().await()
         role = doc.getString("role") ?: "student"
     }
 
-    // ✅ Nếu là admin thì route Profile -> ManagerProfile
+    // Nếu là admin thì route Profile -> ManagerProfile
     val profileRoute = if (role == "admin") Routes.ManagerProfile else Routes.Profile
 
     val items = listOf(

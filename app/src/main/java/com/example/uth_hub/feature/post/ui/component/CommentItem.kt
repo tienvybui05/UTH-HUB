@@ -21,6 +21,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.uth_hub.R
@@ -54,7 +55,8 @@ fun CommentItem(
             contentDescription = "Avatar",
             modifier = Modifier
                 .size(40.dp)
-                .clip(CircleShape),
+                .clip(CircleShape)
+                .clickable { onOpenProfile(comment.authorId) }, // 🔹 click avatar → mở profile
             contentScale = ContentScale.Crop
         )
 
@@ -74,7 +76,10 @@ fun CommentItem(
                         text = comment.authorName,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
-                        color = ColorCustom.secondText
+                        color = ColorCustom.secondText,
+                        modifier = Modifier.clickable {
+                            onOpenProfile(comment.authorId) // 🔹 click tên → mở profile
+                        }
                     )
                     Spacer(Modifier.height(2.dp))
                     if (comment.text.isNotBlank()) {
@@ -184,7 +189,6 @@ fun CommentItem(
         }
     }
 }
-
 
 private fun formatTimeAgo(timestamp: Timestamp?, nowMillis: Long): String {
     if (timestamp == null) return ""

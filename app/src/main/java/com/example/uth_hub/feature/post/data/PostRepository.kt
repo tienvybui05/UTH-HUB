@@ -240,7 +240,7 @@ class PostRepository(
         // Tạo docRef trước để có id cho folder Storage
         val newCommentRef = commentsCol.document()
 
-        // 🔹 Upload media nếu có
+        //  Upload media nếu có
         val mediaUrls = mutableListOf<String>()
         for (uri in mediaUris) {
             val fileName =

@@ -14,17 +14,23 @@ import androidx.navigation.NavController
 import com.example.uth_hub.feature.profile.ui.components.ProfileHeader
 import com.example.uth_hub.feature.profile.ui.components.ProfileTabBar
 import com.example.uth_hub.feature.profile.ui.components.TopBarSimple
+import com.example.uth_hub.feature.profile.viewmodel.OtherProfileUiState
 import com.example.uth_hub.feature.profile.viewmodel.OtherProfileViewModel
-// import Routes nếu cần điều hướng bài viết...
+import com.example.uth_hub.feature.profile.viewmodel.OtherProfileViewModelFactory
 
 @Composable
 fun OtherProfileScreen(
     navController: NavController,
-    vm: OtherProfileViewModel = viewModel()        // ViewModel load thông tin user khác
+    uid: String, // 🔹 nhận uid từ NavGraph
 ) {
+    // 🔹 ViewModel dùng Factory để nhận uid
+    val vm: OtherProfileViewModel = viewModel(
+        factory = OtherProfileViewModelFactory(uid)
+    )
+
     var selectedTabIndex by remember { mutableStateOf(0) }
 
-    val ui = vm.ui.collectAsState().value
+    val ui: OtherProfileUiState = vm.ui.collectAsState().value
     val user = ui.user
 
     Scaffold(

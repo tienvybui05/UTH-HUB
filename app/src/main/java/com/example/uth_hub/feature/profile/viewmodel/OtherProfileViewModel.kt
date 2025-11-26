@@ -1,11 +1,9 @@
 package com.example.uth_hub.feature.profile.viewmodel
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.uth_hub.feature.auth.AuthConst
 import com.example.uth_hub.feature.auth.domain.model.AppUser
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -13,37 +11,33 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-data class OtherProfileUiState(
-    val loading: Boolean = true,
-    val user: AppUser? = null,
-    val error: String? = null
-)
 
+/**
+ * ViewModel hiển thị trang cá nhân của người KHÁC.
+ * uid được truyền trực tiếp từ NavGraph thông qua Factory
+ */
 class OtherProfileViewModel(
-    private val savedStateHandle: SavedStateHandle
+    private val uid: String
 ) : ViewModel() {
 
-    private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
     private val _ui = MutableStateFlow(OtherProfileUiState())
     val ui: StateFlow<OtherProfileUiState> = _ui.asStateFlow()
 
     init {
-        // uid được truyền từ route: Routes.OtherProfile/{uid}
-        val uid: String? = savedStateHandle["uid"]
-        if (uid.isNullOrBlank()) {
+        if (uid.isBlank()) {
             _ui.value = OtherProfileUiState(
                 loading = false,
                 user = null,
                 error = "Không tìm thấy uid người dùng."
             )
         } else {
-            loadUser(uid)
+            loadUser()
         }
     }
 
-    private fun loadUser(uid: String) {
+    private fun loadUser() {
         viewModelScope.launch {
             _ui.value = _ui.value.copy(loading = true, error = null)
             try {
@@ -71,11 +65,9 @@ class OtherProfileViewModel(
 
     /**
      * Chia sẻ trang cá nhân người dùng khác.
-     * Hiện tại để trống, sau này bạn có thể:
-     *  - sinh deep link (link profile)
-     *  - đưa link đó vào Intent.ACTION_SEND trong layer UI.
      */
     fun shareProfile(user: AppUser?) {
         // TODO: implement chia sẻ trang cá nhân (deep link / dynamic link / hosting)
     }
 }
+

@@ -53,7 +53,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
     }
 
     val bottomBarRoutes = remember {
-        setOf(Routes.HomeScreen, Routes.CreatePost, Routes.Notification, Routes.Profile, Routes.ManagerProfile)
+        setOf(Routes.HomeScreen, Routes.CreatePost, Routes.Notification, Routes.Profile, Routes.ManagerProfile, Routes.OtherProfile)
     }
     val authRoutes = remember {
         setOf(
@@ -70,7 +70,7 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
         isLoggedIn &&
                 currentRoute != null &&
                 authRoutes.none { pattern -> currentRoute.startsWith(pattern.substringBefore("/{")) } &&
-                bottomBarRoutes.any { it == currentRoute }
+                bottomBarRoutes.any { pattern -> currentRoute.startsWith(pattern.substringBefore("/{")) }
 
     val startDest = AuthRoutes.Splash
 
@@ -232,8 +232,12 @@ fun NavGraph(navController: NavHostController, modifier: Modifier = Modifier) {
                 PostCommentScreen(navController = navController, postId = postId)
             }
             composable("${Routes.OtherProfile}/{uid}") { backStackEntry ->
-                // OtherProfileScreen dùng viewModel() với SavedStateHandle để tự lấy uid
-                OtherProfileScreen(navController = navController)
+                // Lấy uid từ arguments và truyền xuống OtherProfileScreen
+                val uid = backStackEntry.arguments?.getString("uid") ?: ""
+                OtherProfileScreen(
+                    navController = navController,
+                    uid = uid
+                )
             }
 
         }

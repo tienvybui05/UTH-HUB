@@ -11,11 +11,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-data class ProfileUiState(
-    val loading: Boolean = true,
-    val user: AppUser? = null,
-    val error: String? = null
-)
 
 class ProfileViewModel : ViewModel() {
 
