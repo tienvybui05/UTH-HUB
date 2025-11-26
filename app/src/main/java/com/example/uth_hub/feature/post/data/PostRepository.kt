@@ -374,32 +374,13 @@ suspend fun getSavedPostsByMe(limit: Long = 50): List<PostModel> {
 
         println("✅ CONFIRMED: User is admin. Deleting post $postId")
 
-        val postDoc = postsCol.document(postId)
-
-        // Xóa tất cả dữ liệu liên quan
-        db.runTransaction { tr ->
-            val post = tr.get(postDoc)
-            tr.delete(postDoc)
-
-            val imageUrls = post.get("imageUrls") as? List<String> ?: emptyList()
-            if (imageUrls.isNotEmpty()) {
-                println("Có ${imageUrls.size} ảnh sẽ xóa sau")
-            }
-        }.await()
-
-        // Xóa ảnh sau khi transaction hoàn thành
-        deletePostImages(postId)
-
-        // Xóa các subcollections và saved posts
-        deletePostSubcollections(postId)
+        // ✅ ĐƠN GIẢN: Chỉ cần 1 lệnh xóa
+        postsCol.document(postId).delete().await()
 
         println("✅ Đã xóa bài viết $postId thành công")
     }
 
-    // Hàm kiểm tra admin
-
-
-    // Thêm hàm verifyAdminAccess
+    // Hàm kiểm tra admin (giữ nguyên)
     private suspend fun verifyAdminAccess(): Boolean {
         val uid = auth.currentUser?.uid ?: return false
 
@@ -419,55 +400,6 @@ suspend fun getSavedPostsByMe(limit: Long = 50): List<PostModel> {
         } catch (e: Exception) {
             println("❌ Error checking admin: ${e.message}")
             return false
-        }
-    }
-
-    // Hàm riêng để xóa ảnh
-    private suspend fun deletePostImages(postId: String) {
-        try {
-            val postDoc = postsCol.document(postId).get().await()
-            if (postDoc.exists()) {
-                val imageUrls = postDoc.get("imageUrls") as? List<String> ?: emptyList()
-                imageUrls.forEach { url ->
-                    try {
-                        storage.getReferenceFromUrl(url).delete().await()
-                    } catch (e: Exception) {
-                        println("Lỗi xóa ảnh $url: ${e.message}")
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            println("Lỗi khi lấy thông tin post để xóa ảnh: ${e.message}")
-        }
-    }
-
-    // Hàm riêng để xóa subcollections
-    private suspend fun deletePostSubcollections(postId: String) {
-        val postDoc = postsCol.document(postId)
-
-        // Xóa các subcollections
-        val subcollections = listOf("likes", "saves", "comments", "reports")
-
-        subcollections.forEach { collectionName ->
-            try {
-                val snapshot = postDoc.collection(collectionName).get().await()
-                snapshot.documents.forEach { doc ->
-                    doc.reference.delete().await()
-                }
-            } catch (e: Exception) {
-                println("Lỗi xóa collection $collectionName: ${e.message}")
-            }
-        }
-
-        // Xóa từ saved posts của tất cả users
-        try {
-            val savesQuery = db.collectionGroup("saves").whereEqualTo(FieldPath.documentId(), postId)
-            val saveDocs = savesQuery.get().await()
-            saveDocs.documents.forEach { doc ->
-                doc.reference.delete().await()
-            }
-        } catch (e: Exception) {
-            println("Lỗi xóa saved posts: ${e.message}")
         }
     }
 }

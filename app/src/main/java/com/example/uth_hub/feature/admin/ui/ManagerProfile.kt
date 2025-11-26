@@ -99,7 +99,7 @@ fun ManagerProfile(
             // Menu icon
             IconButton(
                 onClick = { showSettings = true },
-                modifier = Modifier.align(Alignment.TopEnd)
+                modifier = Modifier.padding(top=20.dp).align(Alignment.TopEnd)
             ) {
                 Icon(
                     imageVector = FontAwesomeIcons.Solid.List,

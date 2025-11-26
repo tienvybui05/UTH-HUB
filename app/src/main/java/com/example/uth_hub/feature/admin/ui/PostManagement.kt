@@ -18,8 +18,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import com.example.uth_hub.app.navigation.Routes
 import com.example.uth_hub.core.design.theme.ColorCustom
+import com.example.uth_hub.feature.admin.ui.components.AdminLoadingSkeleton
+import com.example.uth_hub.feature.admin.ui.components.EmptyPostsState // ← Import từ components
 import com.example.uth_hub.feature.post.di.PostDI
 import com.example.uth_hub.feature.post.viewmodel.FeedViewModel
 import com.example.uth_hub.feature.post.viewmodel.FeedViewModelFactory
@@ -39,6 +41,7 @@ private val INSTITUTES = listOf(
     "Viện Nghiên cứu & Đào tạo Đèo Cả"
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PostManagement(
     navController: NavController,
@@ -50,9 +53,10 @@ fun PostManagement(
     )
 ) {
     val posts by vm.posts.collectAsState()
+    val isLoading by vm.isLoading.collectAsState() // ← Lấy trạng thái loading từ ViewModel
     var selectedInstitute by remember { mutableStateOf("Tất cả khoa") }
     var expanded by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
+    var isDeleting by remember { mutableStateOf(false) } // ← Loading riêng cho xóa bài
     var showMessage by remember { mutableStateOf<String?>(null) }
     var postToDelete by remember { mutableStateOf<String?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -68,7 +72,10 @@ fun PostManagement(
     // Hiển thị Snackbar khi có message
     LaunchedEffect(showMessage) {
         showMessage?.let { message ->
-            snackbarHostState.showSnackbar(message)
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
             showMessage = null
         }
     }
@@ -76,25 +83,30 @@ fun PostManagement(
     // Xử lý xóa bài viết
     LaunchedEffect(postToDelete) {
         postToDelete?.let { postId ->
-            isLoading = true
+            isDeleting = true
             try {
-                println("🔄 Bắt đầu xử lý xóa bài viết: $postId")
+                println("Bắt đầu xử lý xóa bài viết: $postId")
                 vm.deletePost(postId)
-                showMessage = "Đã xóa bài viết thành công"
-                println("✅ Xóa bài viết $postId thành công từ UI")
+                showMessage = " Đã xóa bài viết thành công"
+                println("Xóa bài viết $postId thành công từ UI")
             } catch (e: Exception) {
                 val errorMsg = "Lỗi khi xóa bài viết: ${e.message}"
                 showMessage = errorMsg
-                println("❌ $errorMsg")
+                println(errorMsg)
             } finally {
-                isLoading = false
+                isDeleting = false
                 postToDelete = null
             }
         }
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        topBar = {
+            PostManagementTopBar(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -107,190 +119,242 @@ fun PostManagement(
                     .background(color = Color.White),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(5.dp, 20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    TextButton(onClick = {
-                        navController.popBackStack()
-                    }) {
-                        Icon(
-                            imageVector = FontAwesomeIcons.Solid.ChevronLeft,
-                            contentDescription = "Quay về",
-                            tint = ColorCustom.primary,
-                            modifier = Modifier.size(24.dp),
-                        )
-                        Text(
-                            "Quản lý bài viết",
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = ColorCustom.primary
-                        )
-                    }
-                }
-
-                // Divider
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(color = ColorCustom.primary)
-                )
-
                 // Filter Section
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Dropdown chọn khoa
-                    Box(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Column {
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { expanded = true }
-                                    .shadow(
-                                        elevation = 8.dp,
-                                        shape = RoundedCornerShape(12.dp),
-                                    ),
-                                shape = RoundedCornerShape(10.dp),
-                                color = ColorCustom.primary
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = selectedInstitute,
-                                        color = Color.White,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    Icon(
-                                        imageVector = Icons.Default.ArrowDropDown,
-                                        contentDescription = "Chọn khoa",
-                                        tint = Color.White
-                                    )
-                                }
-                            }
+                FilterSection(
+                    selectedInstitute = selectedInstitute,
+                    expanded = expanded,
+                    onInstituteClick = { expanded = true },
+                    onInstituteSelected = { institute ->
+                        selectedInstitute = institute
+                        expanded = false
+                    },
+                    onDismissRequest = { expanded = false },
+                    onReportedPostsClick = { navController.navigate(Routes.ReportedPost) }
+                )
 
-                            DropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false },
-                                modifier = Modifier
-                                    .background(Color.White)
-                                    .fillMaxWidth(0.8f)
-                            ) {
-                                INSTITUTES.forEach { institute ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(
-                                                text = institute,
-                                                color = if (institute == selectedInstitute) ColorCustom.primary else Color.Black,
-                                                fontWeight = if (institute == selectedInstitute) FontWeight.Bold else FontWeight.Normal
-                                            )
-                                        },
-                                        onClick = {
-                                            selectedInstitute = institute
-                                            expanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
+                // Thống kê - chỉ hiển thị khi không loading
+                if (!isLoading) {
+                    StatisticsSection(
+                        filteredPostsCount = filteredPosts.size,
+                        selectedInstitute = selectedInstitute
+                    )
+                }
 
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Button(
-                        onClick = {
-                            navController.navigate("reported_posts")
+                // Posts List với loading state
+                if (isLoading) {
+                    // Hiển thị skeleton loading khi đang tải dữ liệu
+                    AdminLoadingSkeleton()
+                } else if (filteredPosts.isEmpty()) {
+                    // Sử dụng EmptyPostsState từ components
+                    EmptyPostsState(selectedInstitute = selectedInstitute)
+                } else {
+                    PostsListSection(
+                        filteredPosts = filteredPosts,
+                        isDeleting = isDeleting,
+                        onDeletePost = { postId -> postToDelete = postId },
+                        onViewReports = { postId ->
+                            println("Xem báo cáo bài viết: $postId")
                         },
-                        modifier = Modifier,
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = ColorCustom.linkPink
-                        )
-                    ) {
-                        Text(text = "Bị tố cáo", color = Color.White)
-                    }
-                }
-
-                // Thống kê
-                Text(
-                    text = "Hiển thị ${filteredPosts.size} bài viết" +
-                            if (selectedInstitute != "Tất cả khoa") " từ $selectedInstitute" else "",
-                    fontSize = 14.sp,
-                    color = ColorCustom.secondText,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                )
-
-                // Posts List
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(filteredPosts.size) { index ->
-                        AdminPostItem(
-                            post = filteredPosts[index],
-                            onDeletePost = { postId ->
-                                postToDelete = postId
-                            },
-                            onViewReports = { postId ->
-                                println("Xem báo cáo bài viết: $postId")
-                            },
-                            isLoading = isLoading
-                        )
-                    }
-
-                    if (filteredPosts.isEmpty()) {
-                        item {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(40.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = if (selectedInstitute == "Tất cả khoa") {
-                                        "Chưa có bài viết nào"
-                                    } else {
-                                        "Không có bài viết nào từ $selectedInstitute"
-                                    },
-                                    fontSize = 16.sp,
-                                    color = ColorCustom.secondText,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                )
-                            }
-                        }
-                    }
+                        onLike = { postId -> vm.toggleLike(postId) },
+                        onComment = { postId ->
+                            navController.navigate("${Routes.PostComment}/${postId}")
+                        },
+                        onSave = { postId -> vm.toggleSave(postId) },
+                        navController = navController
+                    )
                 }
             }
 
-            // Loading indicator
-            if (isLoading) {
+            // Loading indicator cho xóa bài
+            if (isDeleting) {
                 CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier.align(Alignment.Center),
+                    color = ColorCustom.primary
                 )
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PostManagementTopBar(
+    onBackClick: () -> Unit
+) {
+    CenterAlignedTopAppBar(
+        title = {
+            Text(
+                text = "Quản lý bài viết",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = ColorCustom.primary
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    imageVector = FontAwesomeIcons.Solid.ChevronLeft,
+                    contentDescription = "Quay về",
+                    tint = ColorCustom.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = Color.White
+        )
+    )
+}
+
+@Composable
+private fun FilterSection(
+    selectedInstitute: String,
+    expanded: Boolean,
+    onInstituteClick: () -> Unit,
+    onInstituteSelected: (String) -> Unit,
+    onDismissRequest: () -> Unit,
+    onReportedPostsClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Dropdown chọn khoa
+            Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onInstituteClick() }
+                        .shadow(
+                            elevation = 4.dp,
+                            shape = RoundedCornerShape(12.dp),
+                        ),
+                    shape = RoundedCornerShape(12.dp),
+                    color = ColorCustom.primary
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = selectedInstitute,
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "Chọn khoa",
+                            tint = Color.White
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = onDismissRequest,
+                    modifier = Modifier
+                        .background(Color.White)
+                        .fillMaxWidth(0.9f)
+                ) {
+                    INSTITUTES.forEach { institute ->
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = institute,
+                                    color = if (institute == selectedInstitute) ColorCustom.primary else Color.Black,
+                                    fontWeight = if (institute == selectedInstitute) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            onClick = { onInstituteSelected(institute) }
+                        )
+                    }
+                }
+            }
+
+            // Nút bài viết bị tố cáo
+            Button(
+                onClick = onReportedPostsClick,
+                modifier = Modifier,
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = ColorCustom.linkPink
+                )
+            ) {
+                Text(
+                    text = "Bài bị tố cáo",
+                    color = Color.White,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatisticsSection(
+    filteredPostsCount: Int,
+    selectedInstitute: String
+) {
+    Text(
+        text = buildString {
+            append("Hiển thị $filteredPostsCount bài viết")
+            if (selectedInstitute != "Tất cả khoa") {
+                append(" từ $selectedInstitute")
+            }
+        },
+        fontSize = 14.sp,
+        color = ColorCustom.secondText,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+    )
+}
+
+@Composable
+private fun PostsListSection(
+    filteredPosts: List<com.example.uth_hub.feature.post.domain.model.PostModel>,
+    isDeleting: Boolean,
+    onDeletePost: (String) -> Unit,
+    onViewReports: (String) -> Unit,
+    onLike: (String) -> Unit,
+    onComment: (String) -> Unit,
+    onSave: (String) -> Unit,
+    navController: NavController
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        items(filteredPosts.size) { index ->
+            val post = filteredPosts[index]
+            AdminPostItem(
+                post = post,
+                onDeletePost = onDeletePost,
+                onViewReports = onViewReports,
+                onLike = onLike,
+                onComment = onComment,
+                onSave = onSave,
+                navController = navController,
+                isLoading = isDeleting
+            )
         }
     }
 }

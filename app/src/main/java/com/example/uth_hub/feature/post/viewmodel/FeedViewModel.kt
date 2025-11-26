@@ -25,6 +25,9 @@ class FeedViewModel(
     private val _posts = MutableStateFlow<List<PostModel>>(emptyList())
     val posts = _posts.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(true) // ← Thêm trạng thái loading
+    val isLoading = _isLoading.asStateFlow()
+
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
 
@@ -36,6 +39,9 @@ class FeedViewModel(
 
     private fun observeFeed() {
         val q: Query = repo.feedQuery()
+
+        // Bắt đầu loading
+        _isLoading.value = true
 
         callbackFlow {
             val reg = q.addSnapshotListener { snap, err ->
@@ -69,11 +75,13 @@ class FeedViewModel(
                     onSuccess = { list ->
                         viewModelScope.launch {
                             _posts.value = enrichWithFlags(list)
+                            _isLoading.value = false // ← Kết thúc loading khi có dữ liệu
                         }
                     },
                     onFailure = { e ->
                         _error.value =
                             (e as? FirebaseFirestoreException)?.message ?: e.message
+                        _isLoading.value = false // ← Kết thúc loading khi có lỗi
                     }
                 )
             }
@@ -162,6 +170,7 @@ class FeedViewModel(
             }
         }
     }
+
     fun deletePost(postId: String) {
         val deletedPost = _posts.value.find { it.id == postId }
         _posts.value = _posts.value.filter { it.id != postId }
@@ -186,6 +195,12 @@ class FeedViewModel(
 
     // Hàm để refresh feed (nếu cần)
     fun loadPosts() {
+        _isLoading.value = true // ← Bắt đầu loading khi refresh
         observeFeed()
+    }
+
+    // Hàm để set loading thủ công (nếu cần)
+    fun setLoading(loading: Boolean) {
+        _isLoading.value = loading
     }
 }
