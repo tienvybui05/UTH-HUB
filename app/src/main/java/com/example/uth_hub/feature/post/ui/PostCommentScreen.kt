@@ -46,10 +46,10 @@ fun PostCommentScreen(
         onSendComment = vm::sendComment,
         onToggleLike = vm::toggleLike,
         onToggleSave = vm::toggleSave,
-        onSetMedia = vm::setCommentMedia,
-        onClearMedia = vm::clearCommentMedia,
+        onSetMedia = vm::setMedia,          //  set media cho comment
+        onClearMedia = vm::clearMedia,      //  clear media
         onCommentLike = vm::toggleCommentLike,
-        onReplyClick = vm::setReplyingTo,
+        onReplyClick = vm::startReplyTo,
         onOpenProfile = { uid ->
             navController.navigate("${Routes.OtherProfile}/$uid")
         }

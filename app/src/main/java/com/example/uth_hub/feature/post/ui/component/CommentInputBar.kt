@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Videocam
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,8 +38,10 @@ fun CommentInputBar(
     sending: Boolean,
     mediaUris: List<Uri>,
     mediaType: String?,
-    onPickImages: () -> Unit,
-    onPickVideo: () -> Unit,
+    //  icon media (ảnh + video)
+    onPickMedia: () -> Unit,
+    //  icon camera chụp ảnh
+    onOpenCamera: () -> Unit,
     onClearMedia: () -> Unit
 ) {
     Surface(
@@ -65,19 +68,19 @@ fun CommentInputBar(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Chọn ảnh
-                IconButton(onClick = onPickImages) {
+                //  Chọn media (ảnh + video)
+                IconButton(onClick = onPickMedia) {
                     Icon(
                         imageVector = Icons.Outlined.Image,
-                        contentDescription = "Chọn ảnh"
+                        contentDescription = "Chọn ảnh / video"
                     )
                 }
 
-                // Chọn video
-                IconButton(onClick = onPickVideo) {
+                //  Mở camera
+                IconButton(onClick = onOpenCamera) {
                     Icon(
-                        imageVector = Icons.Outlined.Videocam,
-                        contentDescription = "Chọn video"
+                        imageVector = Icons.Outlined.PhotoCamera,
+                        contentDescription = "Chụp ảnh"
                     )
                 }
 
@@ -93,9 +96,11 @@ fun CommentInputBar(
 
                 Spacer(Modifier.width(8.dp))
 
+                val canSend = (value.isNotBlank() || mediaUris.isNotEmpty()) && !sending
+
                 IconButton(
-                    onClick = onSend,
-                    enabled = value.isNotBlank() && !sending
+                    onClick = { if (canSend) onSend() },
+                    enabled = canSend
                 ) {
                     Icon(
                         imageVector = Icons.Filled.Send,
@@ -120,7 +125,7 @@ private fun SelectedMediaPreviewRow(
         modifier = Modifier.fillMaxWidth()
     ) {
         if (mediaType == "video") {
-            // Video: chỉ hiển thị 1 card mô tả
+            //  Video: chỉ hiển thị 1 card mô tả
             Surface(
                 shape = RoundedCornerShape(10.dp),
                 tonalElevation = 1.dp,
@@ -142,7 +147,7 @@ private fun SelectedMediaPreviewRow(
                 }
             }
         } else {
-            // Ảnh: hiển thị dạng list ngang
+            //  Ảnh: hiển thị dạng list ngang
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.weight(1f)
