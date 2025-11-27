@@ -1,29 +1,31 @@
 package com.example.uth_hub.feature.post.data
 
 import android.net.Uri
+import com.example.uth_hub.core.notification.NotificationSender
 import com.example.uth_hub.feature.post.domain.model.PostModel
+import com.example.uth_hub.feature.post.domain.model.CommentModel
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.tasks.await
-import com.example.uth_hub.feature.post.domain.model.CommentModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-
+import kotlinx.coroutines.tasks.await
 
 class PostRepository(
     private val auth: FirebaseAuth,
     private val db: FirebaseFirestore,
     private val storage: FirebaseStorage
 ) {
+
     private val postsCol get() = db.collection("posts")
 
+    // ========================
+    // CREATE POST
+    // ========================
     suspend fun createPost(
         content: String,
         imageUris: List<Uri>,
@@ -34,7 +36,6 @@ class PostRepository(
     ): String {
         val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not logged in")
 
-        // Nếu chưa bật Storage: hãy truyền imageUris = emptyList() khi gọi hàm
         val imageUrls = mutableListOf<String>()
         for (uri in imageUris) {
             val fileName = "posts/$uid/${System.currentTimeMillis()}_${uri.lastPathSegment}"
@@ -64,6 +65,9 @@ class PostRepository(
     fun feedQuery(limit: Long = 30): Query =
         postsCol.orderBy("createdAt", Query.Direction.DESCENDING).limit(limit)
 
+    // ========================
+    // CHECK LIKE / SAVE
+    // ========================
     suspend fun isLiked(postId: String, uid: String): Boolean {
         val doc = postsCol.document(postId).collection("likes").document(uid).get().await()
         return doc.exists()
@@ -74,25 +78,44 @@ class PostRepository(
         return doc.exists()
     }
 
-    suspend fun toggleLike(postId: String) {
+    // ========================
+    // ❤️ LIKE — FIXED (có authorId)
+    // ========================
+    suspend fun toggleLike(postId: String, postAuthorId: String) {
         val uid = auth.currentUser?.uid ?: return
+
         val likeDoc = postsCol.document(postId).collection("likes").document(uid)
         val postDoc = postsCol.document(postId)
 
         db.runTransaction { tr ->
             val liked = tr.get(likeDoc).exists()
+
             if (liked) {
+                // Unlike
                 tr.delete(likeDoc)
                 tr.update(postDoc, "likeCount", FieldValue.increment(-1))
             } else {
+                // Like
                 tr.set(likeDoc, mapOf("createdAt" to FieldValue.serverTimestamp()))
                 tr.update(postDoc, "likeCount", FieldValue.increment(1))
+
+                // Gửi thông báo nếu like bài của người khác
+                if (uid != postAuthorId) {
+                    NotificationSender.sendLikeNotification(
+                        postId = postId,
+                        receiverId = postAuthorId
+                    )
+                }
             }
         }.await()
     }
 
+    // ========================
+    // SAVE
+    // ========================
     suspend fun toggleSave(postId: String) {
         val uid = auth.currentUser?.uid ?: return
+
         val postDoc = postsCol.document(postId)
         val postSaveDoc = postDoc.collection("saves").document(uid)
         val userSaveDoc = db.collection("users").document(uid).collection("saves").document(postId)
@@ -112,17 +135,19 @@ class PostRepository(
         }.await()
     }
 
+    // ========================
+    // LIKE COMMENT
+    // ========================
     suspend fun toggleCommentLike(postId: String, commentId: String) {
         val uid = auth.currentUser?.uid ?: return
 
         val commentDoc = postsCol.document(postId)
-            .collection("comments")
-            .document(commentId)
-
+            .collection("comments").document(commentId)
         val likeDoc = commentDoc.collection("likes").document(uid)
 
         db.runTransaction { tr ->
             val liked = tr.get(likeDoc).exists()
+
             if (liked) {
                 tr.delete(likeDoc)
                 tr.update(commentDoc, "likeCount", FieldValue.increment(-1))
@@ -133,18 +158,21 @@ class PostRepository(
         }.await()
     }
 
-
-    // === SAVED IDS STREAM (nếu cần) ===
+    // ========================
+    // SAVED ID STREAM
+    // ========================
     fun savedIdsFlow(uid: String) = callbackFlow<Set<String>> {
         val ref = db.collection("users").document(uid).collection("saves")
         val reg = ref.addSnapshotListener { snap, _ ->
-            val ids: Set<String> = snap?.documents?.map { it.id }?.toSet() ?: emptySet()
+            val ids = snap?.documents?.map { it.id }?.toSet() ?: emptySet()
             trySend(ids)
         }
         awaitClose { reg.remove() }
     }
 
-    // === Helpers ===
+    // ========================
+    // POST => MODEL
+    // ========================
     private fun docToPost(d: com.google.firebase.firestore.DocumentSnapshot): PostModel =
         PostModel(
             id = d.id,
@@ -155,7 +183,7 @@ class PostRepository(
             authorAvatarUrl = d.getString("authorAvatarUrl") ?: "",
             content = d.getString("content") ?: "",
             imageUrls = (d.get("imageUrls") as? List<*>)?.filterIsInstance<String>()
-                ?: emptyList(), // dùng emptyList<String>() mặc định Kotlin
+                ?: emptyList(),
             createdAt = d.getTimestamp("createdAt"),
             likeCount = d.getLong("likeCount") ?: 0L,
             commentCount = d.getLong("commentCount") ?: 0L,
@@ -167,7 +195,9 @@ class PostRepository(
         return if (doc.exists()) docToPost(doc) else null
     }
 
-    //Helper chuyển DocumentSnapshot → CommentModel
+    // ========================
+    // COMMENT => MODEL
+    // ========================
     private fun docToComment(
         postId: String,
         d: com.google.firebase.firestore.DocumentSnapshot
@@ -180,20 +210,18 @@ class PostRepository(
             authorAvatarUrl = d.getString("authorAvatarUrl") ?: "",
             text = d.getString("text") ?: "",
             createdAt = d.getTimestamp("createdAt"),
-
             parentCommentId = d.getString("parentCommentId"),
             likeCount = d.getLong("likeCount") ?: 0L,
             replyCount = d.getLong("replyCount") ?: 0L,
             mediaUrls = (d.get("mediaUrls") as? List<*>)?.filterIsInstance<String>()
                 ?: emptyList(),
             mediaType = d.getString("mediaType"),
-
-            likedByMe = false  // client set, không lưu DB
+            likedByMe = false
         )
 
-
-    //Flow listen comments của 1 post
-
+    // ========================
+    // OBSERVE COMMENTS
+    // ========================
     fun observeComments(postId: String): Flow<List<CommentModel>> = callbackFlow {
         val ref = postsCol.document(postId)
             .collection("comments")
@@ -203,16 +231,15 @@ class PostRepository(
             if (err != null) {
                 close(err)
             } else {
-                val list = snap?.documents
-                    ?.map { docToComment(postId, it) }
-                    ?: emptyList()
-                trySend(list)
+                trySend(snap?.documents?.map { docToComment(postId, it) } ?: emptyList())
             }
         }
         awaitClose { reg.remove() }
     }
 
-    // thêm comment
+    // ========================
+    // ADD COMMENT
+    // ========================
     suspend fun addComment(
         postId: String,
         text: String,
@@ -222,7 +249,6 @@ class PostRepository(
     ) {
         val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not logged in")
 
-        // Lấy thông tin user để gắn vào comment
         val userDoc = db.collection("users").document(uid).get().await()
         val authorName = userDoc.getString("displayName")
             ?: userDoc.getString("name")
@@ -236,11 +262,8 @@ class PostRepository(
 
         val postDoc = postsCol.document(postId)
         val commentsCol = postDoc.collection("comments")
-
-        // Tạo docRef trước để có id cho folder Storage
         val newCommentRef = commentsCol.document()
 
-        //  Upload media nếu có
         val mediaUrls = mutableListOf<String>()
         for (uri in mediaUris) {
             val fileName =
@@ -265,141 +288,137 @@ class PostRepository(
 
         db.runTransaction { tr ->
             tr.set(newCommentRef, data)
-
-            // tăng tổng comment của post
             tr.update(postDoc, "commentCount", FieldValue.increment(1))
 
-            // nếu là reply → tăng replyCount của comment cha
             if (!parentCommentId.isNullOrEmpty()) {
-                val parentRef = commentsCol.document(parentCommentId)
-                tr.update(parentRef, "replyCount", FieldValue.increment(1))
+                tr.update(
+                    commentsCol.document(parentCommentId),
+                    "replyCount", FieldValue.increment(1)
+                )
             }
         }.await()
     }
 
+    // ========================
+    // EDIT COMMENT
+    // ========================
+    suspend fun editCommentText(postId: String, commentId: String, newText: String) {
+        val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not logged in")
 
+        val commentRef = postsCol.document(postId)
+            .collection("comments").document(commentId)
 
+        db.runTransaction { tr ->
+            val snap = tr.get(commentRef)
+            if (!snap.exists()) throw IllegalStateException("Comment not found")
 
+            if (snap.getString("authorId") != uid)
+                throw IllegalStateException("Không có quyền chỉnh sửa bình luận này")
 
+            tr.update(
+                commentRef,
+                mapOf(
+                    "text" to newText,
+                    "editedAt" to FieldValue.serverTimestamp()
+                )
+            )
+        }.await()
+    }
+
+    // ========================
+    // DELETE COMMENT
+    // ========================
+    suspend fun deleteComment(postId: String, comment: CommentModel) {
+        val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not logged in")
+
+        val postDoc = postsCol.document(postId)
+        val commentsCol = postDoc.collection("comments")
+        val commentRef = commentsCol.document(comment.id)
+
+        db.runTransaction { tr ->
+            val snap = tr.get(commentRef)
+            if (!snap.exists()) return@runTransaction
+
+            if (snap.getString("authorId") != uid)
+                throw IllegalStateException("Không có quyền xoá bình luận này")
+
+            val totalDec = 1L + comment.replyCount
+            tr.update(postDoc, "commentCount", FieldValue.increment(-totalDec))
+
+            if (!comment.parentCommentId.isNullOrEmpty()) {
+                tr.update(
+                    commentsCol.document(comment.parentCommentId!!),
+                    "replyCount", FieldValue.increment(-1)
+                )
+            }
+
+            tr.delete(commentRef)
+        }.await()
+
+        // XOÁ reply + likes
+        commentsCol.whereEqualTo("parentCommentId", comment.id)
+            .get().await().documents.forEach { it.reference.delete() }
+
+        commentRef.collection("likes")
+            .get().await().documents.forEach { it.reference.delete() }
+    }
+
+    // ========================
+    // FETCH POSTS BY REFERNECE
+    // ========================
     private suspend fun fetchPostsByRefs(postRefs: List<DocumentReference>): List<PostModel> {
         if (postRefs.isEmpty()) return emptyList()
-        // Dùng từng get().await() để tránh lỗi getAll() trên vài phiên bản lib
+
         val snaps = postRefs.map { it.get().await() }
-        return snaps
-            .filter { it.exists() }
+        return snaps.filter { it.exists() }
             .map { docToPost(it) }
             .sortedByDescending { it.createdAt?.toDate()?.time ?: 0L }
     }
 
-    // === Liked & Saved feeds ===
+    // ========================
+    // GET LIKED POSTS
+    // ========================
+    suspend fun getLikedPostsByMe(limit: Long = 50): List<PostModel> {
+        val uid = auth.currentUser?.uid ?: return emptyList()
 
-//    suspend fun getLikedPostsByMe(limit: Long = 50): List<PostModel> {
-//        val uid = auth.currentUser?.uid ?: return emptyList()
-//        val likeDocs = db.collectionGroup("likes")
-//            .whereEqualTo(FieldPath.documentId(), uid)
-//            .limit(limit)
-//            .get()
-//            .await()
-//
-//        val postRefs = likeDocs.documents.mapNotNull { it.reference.parent.parent } // /posts/{postId}
-//        val posts = fetchPostsByRefs(postRefs)
-//        return posts.map { it.copy(likedByMe = true) }
-//    }
-suspend fun getLikedPostsByMe(limit: Long = 50): List<PostModel> {
-    val uid = auth.currentUser?.uid ?: return emptyList()
+        val snap = postsCol.orderBy("createdAt", Query.Direction.DESCENDING)
+            .limit(limit).get().await()
 
-    // 1. Lấy một list post mới nhất
-    val snap = postsCol
-        .orderBy("createdAt", Query.Direction.DESCENDING)
-        .limit(limit)
-        .get()
-        .await()
+        val posts = snap.documents.map { docToPost(it) }
 
-    val allPosts = snap.documents.map { docToPost(it) }
-
-    // 2. Chỉ giữ lại những post mà chính mình đã like
-    val result = mutableListOf<PostModel>()
-    for (p in allPosts) {
-        val liked = isLiked(p.id, uid)   // đọc /posts/{postId}/likes/{uid}
-        if (liked) {
-            result += p.copy(likedByMe = true)
-        }
+        return posts.filter { isLiked(it.id, uid) }
+            .map { it.copy(likedByMe = true) }
     }
-    return result
-}
 
+    // ========================
+    // GET SAVED POSTS
+    // ========================
+    suspend fun getSavedPostsByMe(limit: Long = 50): List<PostModel> {
+        val uid = auth.currentUser?.uid ?: return emptyList()
 
-//    suspend fun getSavedPostsByMe(limit: Long = 50): List<PostModel> {
-//        val uid = auth.currentUser?.uid ?: return emptyList()
-//        val saveDocs = db.collectionGroup("saves")
-//            .whereEqualTo(FieldPath.documentId(), uid)
-//            .limit(limit)
-//            .get()
-//            .await()
-//
-//        val postRefs = saveDocs.documents.mapNotNull { it.reference.parent.parent }
-//        val posts = fetchPostsByRefs(postRefs)
-//        return posts.map { it.copy(savedByMe = true) }
-//    }
-suspend fun getSavedPostsByMe(limit: Long = 50): List<PostModel> {
-    val uid = auth.currentUser?.uid ?: return emptyList()
+        val snap = postsCol.orderBy("createdAt", Query.Direction.DESCENDING)
+            .limit(limit).get().await()
 
-    // 1. Lấy một list post mới nhất
-    val snap = postsCol
-        .orderBy("createdAt", Query.Direction.DESCENDING)
-        .limit(limit)
-        .get()
-        .await()
+        val posts = snap.documents.map { docToPost(it) }
 
-    val allPosts = snap.documents.map { docToPost(it) }
-
-    // 2. Chỉ giữ lại những post mà chính mình đã lưu
-    val result = mutableListOf<PostModel>()
-    for (p in allPosts) {
-        val saved = isSaved(p.id, uid)   // đọc /posts/{postId}/likes/{uid}
-        if (saved) {
-            result += p.copy(savedByMe = true)
-        }
+        return posts.filter { isSaved(it.id, uid) }
+            .map { it.copy(savedByMe = true) }
     }
-    return result
-}
+
+    // ========================
+    // DELETE POST (ADMIN ONLY)
+    // ========================
     suspend fun deletePost(postId: String) {
         val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not logged in")
-
-        // Kiểm tra admin status
-        val isAdmin = verifyAdminAccess()
-        if (!isAdmin) {
+        if (!verifyAdminAccess()) {
             throw IllegalStateException("User $uid is not admin. Cannot delete post $postId")
         }
-
-        println("✅ CONFIRMED: User is admin. Deleting post $postId")
-
-        // ✅ ĐƠN GIẢN: Chỉ cần 1 lệnh xóa
         postsCol.document(postId).delete().await()
-
-        println("✅ Đã xóa bài viết $postId thành công")
     }
 
-    // Hàm kiểm tra admin (giữ nguyên)
     private suspend fun verifyAdminAccess(): Boolean {
         val uid = auth.currentUser?.uid ?: return false
-
-        println("=== VERIFYING ADMIN ACCESS ===")
-        println("User UID: $uid")
-
-        try {
-            val userDoc = db.collection("users").document(uid).get().await()
-            val role = userDoc.getString("role")
-            val isAdmin = role == "admin"
-
-            println("User role: $role")
-            println("Is admin: $isAdmin")
-            println("============================")
-
-            return isAdmin
-        } catch (e: Exception) {
-            println("❌ Error checking admin: ${e.message}")
-            return false
-        }
+        val doc = db.collection("users").document(uid).get().await()
+        return doc.getString("role") == "admin"
     }
 }
