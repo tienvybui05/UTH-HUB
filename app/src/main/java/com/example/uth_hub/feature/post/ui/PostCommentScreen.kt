@@ -59,6 +59,8 @@ fun PostCommentScreen(
         onReplyClick = vm::startReplyTo,
         onOpenProfile = { uid ->
             navController.navigate("${Routes.OtherProfile}/$uid")
-        }
+        },
+        onEditComment = vm::startEditComment,
+        onDeleteComment = vm::deleteComment
     )
 }

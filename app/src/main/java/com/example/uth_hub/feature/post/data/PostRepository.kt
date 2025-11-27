@@ -15,8 +15,6 @@ import kotlinx.coroutines.tasks.await
 import com.example.uth_hub.feature.post.domain.model.CommentModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import com.example.uth_hub.core.notification.NotificationSender
-
 
 
 class PostRepository(
@@ -76,34 +74,22 @@ class PostRepository(
         return doc.exists()
     }
 
-    suspend fun toggleLike(postId: String, postAuthorId: String) {
+    suspend fun toggleLike(postId: String) {
         val uid = auth.currentUser?.uid ?: return
         val likeDoc = postsCol.document(postId).collection("likes").document(uid)
         val postDoc = postsCol.document(postId)
 
         db.runTransaction { tr ->
             val liked = tr.get(likeDoc).exists()
-
             if (liked) {
-                // unlike
                 tr.delete(likeDoc)
                 tr.update(postDoc, "likeCount", FieldValue.increment(-1))
             } else {
-                // like
                 tr.set(likeDoc, mapOf("createdAt" to FieldValue.serverTimestamp()))
                 tr.update(postDoc, "likeCount", FieldValue.increment(1))
-
-                // 🔥 GỬI THÔNG BÁO THẬT
-                if (uid != postAuthorId) {
-                    NotificationSender.sendLikeNotification(
-                        postId = postId,
-                        receiverId = postAuthorId
-                    )
-                }
             }
         }.await()
     }
-
 
     suspend fun toggleSave(postId: String) {
         val uid = auth.currentUser?.uid ?: return
