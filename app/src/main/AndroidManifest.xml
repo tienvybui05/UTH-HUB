@@ -34,7 +34,7 @@
                 <data
                     android:scheme="https"
                     android:host="uth-hub-49b77.web.app"
-                    android:pathPrefix="/user" />
+                    android:pathPrefix="/user/" />
             </intent-filter>
 
         </activity>

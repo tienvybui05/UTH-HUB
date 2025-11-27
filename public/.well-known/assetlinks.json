@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "com.example.uth_hub",
       "sha256_cert_fingerprints": [
-        "76:D9:FC:07:E5:60:AB:87:41:BF:43:37:E0:DC:8C:57:2D:CC:9C:03:5C:DC:4D:B2:5F:CC:01:E2:E8:89:4E:AC"
+        "76:D9:FC:07:E5:60:AB:87:41:BF:43:37:E0:DC:8C:57:2D:CC:9C:03:5C:DC:4D:B2:5F:CC:01:E2:E8:89:4E:AC",
+        "D6:72:F7:7A:C1:B9:07:D1:34:8A:C2:D1:87:22:AD:E7:F9:74:53:B2:2D:E7:35:A5:2E:14:60:E8:25:21:1C:4B"
       ]
     }
   }

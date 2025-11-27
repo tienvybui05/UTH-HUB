@@ -116,13 +116,14 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
             )
         }
         // *** SHEET CHIA SẺ TRANG CÁ NHÂN ***
-        if (showShareProfile) {
+        if (showShareProfile && user != null) {
             ShareProfileSheet(
-                usernameOrMssv = user?.displayName ?: "",
-                profileUrl = AppLinkConfig.buildProfileUrl(user?.uid ?: ""),
+                usernameOrMssv = user.displayName ?: "",
+                profileUrl = AppLinkConfig.buildProfileUrl(user.uid),
                 onDismissRequest = { showShareProfile = false }
             )
         }
+
         // *** SHEET ĐỔI AVATAR ***
         if (showChangeAvatar) {
             ChangeAvatarSheet(
