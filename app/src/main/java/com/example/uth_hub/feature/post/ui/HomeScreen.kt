@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.uth_hub.app.navigation.Routes
 import com.example.uth_hub.feature.admin.ui.components.EmptyPostsState
+import com.example.uth_hub.feature.admin.ui.components.InstituteDropdown
 import com.example.uth_hub.feature.admin.ui.components.LoadingSkeleton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -169,71 +170,17 @@ fun HomeScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top=10.dp, start = 10.dp, end = 10.dp),
+                    .padding(top = 10.dp, start = 10.dp, end = 10.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .widthIn(max = 280.dp) // ← Giới hạn chiều rộng tối đa cho toàn bộ Box
-                ) {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(30.dp))
-                            .border(1.dp, ColorCustom.primary, RoundedCornerShape(30.dp))
-                            .clickable { expanded = true },
-                        color = Color.White
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = selectedInstitute,
-                                color = ColorCustom.primary,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f) // ← Quan trọng: chiếm không gian còn lại
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = "Chọn khoa",
-                                tint = ColorCustom.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
-                        modifier = Modifier
-                            .background(Color.White)
-                            .fillMaxWidth(0.9f)
-                    ) {
-                        INSTITUTES.forEach { institute ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        text = institute,
-                                        color = if (institute == selectedInstitute) ColorCustom.primary else Color.Black,
-                                        fontWeight = if (institute == selectedInstitute) FontWeight.Bold else FontWeight.Normal,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                },
-                                onClick = {
-                                    selectedInstitute = institute
-                                    expanded = false
-                                }
-                            )
-                        }
-                    }
-                }
+                // Sử dụng component chung với style User
+                InstituteDropdown(
+                    selectedInstitute = selectedInstitute,
+                    onInstituteSelected = { selectedInstitute = it },
+                    isAdminStyle = false,
+                    maxWidth = false
+                )
             }
 
             Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {

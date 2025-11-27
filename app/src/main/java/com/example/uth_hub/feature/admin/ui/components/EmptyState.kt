@@ -27,7 +27,7 @@ fun EmptyState(
     Column(
         modifier = modifier
             .fillMaxWidth().clip(shape = RoundedCornerShape(10.dp))
-            .padding(15.dp).background(Color(0xFFF2FFFF)),
+            .padding(15.dp).background(Color(0xFFE8FDFD)).padding(15.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
