@@ -3,6 +3,7 @@ package com.example.uth_hub.feature.notifications.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,6 +29,7 @@ import com.example.uth_hub.feature.notifications.data.NotificationRepository
 import com.example.uth_hub.feature.notifications.model.NotificationModel
 import com.google.firebase.auth.FirebaseAuth
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.uth_hub.app.navigation.Routes   // 👈 nhớ import
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,7 +41,6 @@ fun NotificationsScreen(navController: NavController) {
 
     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
     val notifications by vm.notifications.collectAsState(initial = emptyList())
-
 
     LaunchedEffect(Unit) {
         vm.load(uid)
@@ -80,18 +81,28 @@ fun NotificationsScreen(navController: NavController) {
                 .background(Color.White),
             contentPadding = PaddingValues(bottom = 12.dp)
         ) {
+
             items(notifications) { noti ->
-                NotificationRow(noti)
+                NotificationRow(
+                    noti = noti,
+                    onClick = {
+                        handleNotificationClick(noti, navController)
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun NotificationRow(noti: NotificationModel) {
+fun NotificationRow(
+    noti: NotificationModel,
+    onClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onClick() }    // 👈 CLICK VÀO THÔNG BÁO
             .border(0.5.dp, Color(0xFF00796B).copy(alpha = 0.3f))
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -116,6 +127,19 @@ fun NotificationRow(noti: NotificationModel) {
         }
     }
 }
+
+
+/**
+ * 🔥 Điều hướng khi click vào thông báo
+ */
+fun handleNotificationClick(noti: NotificationModel, navController: NavController) {
+    val postId = noti.postId
+    if (postId.isBlank()) return
+
+    // Điều hướng đến màn PostComment (bài viết + comment)
+    navController.navigate("${Routes.PostComment}/$postId")
+}
+
 
 fun timeAgo(time: Long): String {
     if (time == 0L) return ""

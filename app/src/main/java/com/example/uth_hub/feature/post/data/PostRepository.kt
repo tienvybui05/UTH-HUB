@@ -87,28 +87,32 @@ class PostRepository(
         val likeDoc = postsCol.document(postId).collection("likes").document(uid)
         val postDoc = postsCol.document(postId)
 
-        db.runTransaction { tr ->
+        // chạy transaction, trả về true nếu là hành động LIKE, false nếu UNLIKE
+        val justLiked = db.runTransaction { tr ->
             val liked = tr.get(likeDoc).exists()
 
             if (liked) {
                 // Unlike
                 tr.delete(likeDoc)
                 tr.update(postDoc, "likeCount", FieldValue.increment(-1))
+                false   // vừa UNLIKE
             } else {
                 // Like
                 tr.set(likeDoc, mapOf("createdAt" to FieldValue.serverTimestamp()))
                 tr.update(postDoc, "likeCount", FieldValue.increment(1))
-
-                // Gửi thông báo nếu like bài của người khác
-                if (uid != postAuthorId) {
-                    NotificationSender.sendLikeNotification(
-                        postId = postId,
-                        receiverId = postAuthorId
-                    )
-                }
+                true    // vừa LIKE
             }
         }.await()
+
+        // 🔥 Gửi thông báo SAU KHI transaction hoàn tất
+        if (justLiked && uid != postAuthorId) {
+            NotificationSender.sendLikeNotification(
+                postId = postId,
+                receiverId = postAuthorId
+            )
+        }
     }
+
 
     // ========================
     // SAVE
@@ -238,8 +242,8 @@ class PostRepository(
     }
 
     // ========================
-    // ADD COMMENT
-    // ========================
+// ADD COMMENT
+// ========================
     suspend fun addComment(
         postId: String,
         text: String,
@@ -297,7 +301,33 @@ class PostRepository(
                 )
             }
         }.await()
+
+        // ===== 🔥 TẠO THÔNG BÁO COMMENT (UI Notification) =====
+        val postSnapshot = postDoc.get().await()
+        val postAuthorId = postSnapshot.getString("authorId")
+
+        if (postAuthorId != null && postAuthorId != uid) {
+
+            val notiRef = db.collection("notifications").document()
+
+            val notiData = mapOf(
+                "id" to notiRef.id,
+                "type" to "comment",
+                "postId" to postId,
+                "senderId" to uid,
+                "senderName" to authorName,
+                "senderAvatar" to avatarUrl,
+                "commentContent" to text,
+                "message" to "$authorName đã bình luận bài viết của bạn",   // 👈 giống like
+                "receiverId" to postAuthorId,
+                "timestamp" to FieldValue.serverTimestamp(),       // 👈 đồng bộ với like
+                "isRead" to false
+            )
+
+            notiRef.set(notiData)
+        }
     }
+
 
     // ========================
     // EDIT COMMENT
