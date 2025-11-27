@@ -11,33 +11,39 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import com.example.uth_hub.R
-
-data class NotificationItem(
-    val userName: String,
-    val time: String,
-    val message: String
-)
+import com.example.uth_hub.feature.notifications.viewmodel.NotificationViewModel
+import com.example.uth_hub.feature.notifications.viewmodel.NotificationViewModelFactory
+import com.example.uth_hub.feature.notifications.data.NotificationRepository
+import com.example.uth_hub.feature.notifications.model.NotificationModel
+import com.google.firebase.auth.FirebaseAuth
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(navController: NavController) {
 
-    // list rỗng — không thay đổi UI
-    val notifications = remember { emptyList<NotificationItem>() }
+    val vm: NotificationViewModel = viewModel(
+        factory = NotificationViewModelFactory(NotificationRepository())
+    )
+
+    val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+    val notifications by vm.notifications.collectAsState(initial = emptyList())
+
+
+    LaunchedEffect(Unit) {
+        vm.load(uid)
+    }
 
     Scaffold(
         topBar = {
@@ -74,16 +80,15 @@ fun NotificationsScreen(navController: NavController) {
                 .background(Color.White),
             contentPadding = PaddingValues(bottom = 12.dp)
         ) {
-            // ❗ Không có items — giữ UI, chỉ danh sách trống
-            items(notifications) { item ->
-                NotificationRow(item)
+            items(notifications) { noti ->
+                NotificationRow(noti)
             }
         }
     }
 }
 
 @Composable
-fun NotificationRow(item: NotificationItem) {
+fun NotificationRow(noti: NotificationModel) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -102,26 +107,24 @@ fun NotificationRow(item: NotificationItem) {
         Spacer(modifier = Modifier.width(8.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(item.userName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(item.time, fontSize = 12.sp, color = Color.Gray)
-            }
-            Text(item.message, fontSize = 14.sp)
+            Text(timeAgo(noti.timestamp), fontSize = 12.sp, color = Color.Gray)
+            Text(noti.message, fontSize = 14.sp)
         }
 
-        IconButton(onClick = { /* TODO */ }) {
-            Icon(
-                imageVector = Icons.Filled.Delete,
-                contentDescription = "Xóa",
-                tint = Color.Red
-            )
+        IconButton(onClick = { /* TODO delete */ }) {
+            Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.Red)
         }
     }
 }
 
-@Preview(showBackground = true, heightDp = 700)
-@Composable
-fun PreviewNotificationsScreen() {
-    NotificationsScreen(navController = rememberNavController())
+fun timeAgo(time: Long): String {
+    if (time == 0L) return ""
+    val diff = System.currentTimeMillis() - time
+    val min = diff / 60000
+    if (min < 1) return "Vừa xong"
+    if (min < 60) return "$min phút trước"
+    val hour = min / 60
+    if (hour < 24) return "$hour giờ trước"
+    val day = hour / 24
+    return "$day ngày trước"
 }
