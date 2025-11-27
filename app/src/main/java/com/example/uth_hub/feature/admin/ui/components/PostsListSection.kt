@@ -19,7 +19,7 @@ fun PostsListSection(
     isDeleting: Boolean,
     onDeletePost: (String) -> Unit,
     onViewReports: (String) -> Unit,
-    onLike: (String) -> Unit,
+    onLike: (PostModel) -> Unit,
     onComment: (String) -> Unit,
     onSave: (String) -> Unit,
     navController: NavController
@@ -35,7 +35,7 @@ fun PostsListSection(
                 post = post,
                 onDeletePost = onDeletePost,
                 onViewReports = onViewReports,
-                onLike = onLike,
+                onLike = { onLike(post) },
                 onComment = onComment,
                 onSave = onSave,
                 navController = navController,

@@ -39,7 +39,10 @@ class SavedPostsViewModel(
         }
     }
 
-    fun toggleLike(postId: String) {
+    // ⭐ FIX CHUẨN — cần đủ postId + postAuthorId
+    fun toggleLike(postId: String, postAuthorId: String) {
+
+        // --- Optimistic update ---
         _posts.value = _posts.value.map { p ->
             if (p.id == postId) {
                 val nowLiked = !p.likedByMe
@@ -49,10 +52,13 @@ class SavedPostsViewModel(
                 )
             } else p
         }
+
+        // --- Firestore update ---
         viewModelScope.launch {
             try {
-                repo.toggleLike(postId)
+                repo.toggleLike(postId, postAuthorId)
             } catch (e: Exception) {
+                // rollback khi fail
                 refresh()
             }
         }
@@ -69,9 +75,11 @@ class SavedPostsViewModel(
                 )
             } else p
         }
+
         viewModelScope.launch {
             try {
                 repo.toggleSave(postId)
+                // chỉ giữ lại post đang saved
                 _posts.value = _posts.value.filter { it.savedByMe }
             } catch (e: Exception) {
                 refresh()

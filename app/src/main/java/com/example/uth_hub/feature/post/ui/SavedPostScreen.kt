@@ -114,7 +114,8 @@ fun SavePostScreen(navController: NavController) {
                     items(posts, key = { it.id }) { p ->
                         PostItem(
                             postModel = p,
-                            onLike = { vm.toggleLike(p.id) },
+                            onLike = { vm.toggleLike(p.id,p.authorId) },
+
                             onComment = { navController.navigate("${Routes.PostComment}/${p.id}") },
                             onSave = { vm.toggleSave(p.id) }
                         )

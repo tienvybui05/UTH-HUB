@@ -39,7 +39,7 @@ class LikedPostsViewModel(
         }
     }
 
-    fun toggleLike(postId: String) {
+    fun toggleLike(postId: String, postAuthorId: String) {
         // Optimistic: bỏ like sẽ loại khỏi danh sách
         _posts.value = _posts.value.map { p ->
             if (p.id == postId) {
@@ -52,7 +52,7 @@ class LikedPostsViewModel(
         }
         viewModelScope.launch {
             try {
-                repo.toggleLike(postId)
+                repo.toggleLike(postId,postAuthorId)
                 // Nếu vừa bỏ like, ẩn khỏi danh sách liked
                 _posts.value = _posts.value.filter { it.likedByMe }
             } catch (e: Exception) {

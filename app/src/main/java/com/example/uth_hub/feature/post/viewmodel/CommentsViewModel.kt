@@ -109,24 +109,28 @@ class CommentsViewModel(
 
     // ============ LIKE / SAVE POST ============
 
-    fun toggleLike() {
+    fun toggleLike(postId: String,postAuth: String) {
         viewModelScope.launch {
             try {
-                repo.toggleLike(postId)
+                repo.toggleLike(postId,postAuth)
+
                 val current = _post.value
                 if (current != null) {
                     val liked = !current.likedByMe
                     val delta = if (liked) 1 else -1
+
                     _post.value = current.copy(
                         likedByMe = liked,
                         likeCount = (current.likeCount + delta).coerceAtLeast(0)
                     )
                 }
+
             } catch (e: Exception) {
                 _error.value = e.message
             }
         }
     }
+
 
     fun toggleSave() {
         viewModelScope.launch {

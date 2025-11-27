@@ -1,4 +1,5 @@
 package com.example.uth_hub.feature.admin.ui.components
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.CircularProgressIndicator
@@ -19,7 +20,7 @@ fun PostManagementContent(
     onInstituteSelected: (String) -> Unit,
     onReportedPostsClick: () -> Unit,
     onDeletePost: (String) -> Unit,
-    onLike: (String) -> Unit,
+    onLike: (PostModel) -> Unit,
     onComment: (String) -> Unit,
     onSave: (String) -> Unit,
     navController: NavController
@@ -30,10 +31,10 @@ fun PostManagementContent(
             .background(color = Color.White)
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             // Filter Section
             FilterSection(
                 selectedInstitute = selectedInstitute,
@@ -41,7 +42,7 @@ fun PostManagementContent(
                 onReportedPostsClick = onReportedPostsClick
             )
 
-            // Thống kê - chỉ hiển thị khi không loading
+            // Statistics
             if (!isLoading) {
                 StatisticsSection(
                     filteredPostsCount = filteredPosts.size,
@@ -49,24 +50,35 @@ fun PostManagementContent(
                 )
             }
 
-            // Posts List với loading state
+            // MAIN LIST
             when {
-                isLoading -> AdminLoadingSkeleton()
-                filteredPosts.isEmpty() -> EmptyPostsState(selectedInstitute = selectedInstitute)
-                else -> PostsListSection(
-                    filteredPosts = filteredPosts,
-                    isDeleting = isDeleting,
-                    onDeletePost = onDeletePost,
-                    onViewReports = { /* TODO */ },
-                    onLike = onLike,
-                    onComment = onComment,
-                    onSave = onSave,
-                    navController = navController
-                )
+                isLoading -> {
+                    AdminLoadingSkeleton()
+                }
+
+                filteredPosts.isEmpty() -> {
+                    EmptyPostsState(selectedInstitute = selectedInstitute)
+                }
+
+                else -> {
+                    PostsListSection(
+                        filteredPosts = filteredPosts,
+                        isDeleting = isDeleting,
+                        onDeletePost = onDeletePost,
+                        onViewReports = { /* TODO */ },
+
+                        // ✅ CHỈ CẦN TRUYỀN THẲNG HÀM XUỐNG
+                        onLike = onLike,
+                        onComment = onComment,
+                        onSave = onSave,
+                        navController = navController
+                    )
+
+                }
             }
         }
 
-        // Loading indicator cho xóa bài - ĐẶT TRONG BOX SCOPE
+        // Loading indicator khi đang xóa bài
         if (isDeleting) {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center),

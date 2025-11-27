@@ -109,7 +109,8 @@ class FeedViewModel(
     /**
      * Optimistic update: cập nhật UI ngay, sau đó gọi Firestore.
      */
-    fun toggleLike(postId: String) {
+    fun toggleLike(postId: String, postAuthorId: String)
+    {
         // 1) UI trước
         _posts.value = _posts.value.map { p ->
             if (p.id == postId) {
@@ -123,7 +124,7 @@ class FeedViewModel(
         // 2) Gọi repo
         viewModelScope.launch {
             try {
-                repo.toggleLike(postId)
+                repo.toggleLike(postId, postAuthorId)
             } catch (e: Exception) {
                 // rollback nếu lỗi
                 _posts.value = _posts.value.map { p ->

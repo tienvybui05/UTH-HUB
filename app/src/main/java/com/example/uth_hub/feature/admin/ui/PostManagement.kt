@@ -40,18 +40,18 @@ fun PostManagement(
         else posts.filter { it.authorInstitute == selectedInstitute }
     }
 
-    // Hiển thị Snackbar khi có message
+    // Show snackbar
     LaunchedEffect(showMessage) {
-        showMessage?.let { message ->
+        showMessage?.let { msg ->
             snackbarHostState.showSnackbar(
-                message = message,
+                message = msg,
                 duration = SnackbarDuration.Short
             )
             showMessage = null
         }
     }
 
-    // Xử lý xóa bài viết
+    // Handle delete post
     LaunchedEffect(postToDelete) {
         postToDelete?.let { postId ->
             isDeleting = true
@@ -68,9 +68,11 @@ fun PostManagement(
     }
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            PostManagementTopBar(onBackClick = { navController.popBackStack() })
+            PostManagementTopBar(
+                onBackClick = { navController.popBackStack() }
+            )
         }
     ) { paddingValues ->
         Box(
@@ -84,12 +86,38 @@ fun PostManagement(
                 isDeleting = isDeleting,
                 selectedInstitute = selectedInstitute,
                 filteredPosts = filteredPosts,
+
                 onInstituteSelected = { selectedInstitute = it },
-                onReportedPostsClick = { navController.navigate(com.example.uth_hub.app.navigation.Routes.ReportedPost) },
-                onDeletePost = { postToDelete = it },
-                onLike = { postId -> vm.toggleLike(postId) },
-                onComment = { postId -> navController.navigate("${com.example.uth_hub.app.navigation.Routes.PostComment}/${postId}") },
-                onSave = { postId -> vm.toggleSave(postId) },
+
+                onReportedPostsClick = {
+                    navController.navigate(
+                        com.example.uth_hub.app.navigation.Routes.ReportedPost
+                    )
+                },
+
+                onDeletePost = { postId ->
+                    postToDelete = postId
+                },
+
+                // ⭐ ĐÃ SỬA — onLike nhận PostModel và truyền đúng 2 tham số
+                onLike = { post ->
+                    vm.toggleLike(
+                        postId = post.id,
+                        postAuthorId = post.authorId
+                    )
+                },
+
+                // Không đổi phần này
+                onComment = { postId ->
+                    navController.navigate(
+                        "${com.example.uth_hub.app.navigation.Routes.PostComment}/$postId"
+                    )
+                },
+
+                onSave = { postId ->
+                    vm.toggleSave(postId)
+                },
+
                 navController = navController
             )
         }

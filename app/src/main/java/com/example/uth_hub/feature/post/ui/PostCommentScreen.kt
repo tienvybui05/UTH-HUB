@@ -44,7 +44,14 @@ fun PostCommentScreen(
         onBack = { navController.popBackStack() },
         onCommentTextChange = vm::onCommentTextChange,
         onSendComment = vm::sendComment,
-        onToggleLike = vm::toggleLike,
+        onToggleLike = {
+            post?.let { p ->
+                vm.toggleLike(
+                    postId = p.id,
+                    postAuth = p.authorId
+                )
+            }
+        },
         onToggleSave = vm::toggleSave,
         onSetMedia = vm::setMedia,          //  set media cho comment
         onClearMedia = vm::clearMedia,      //  clear media
