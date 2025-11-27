@@ -180,20 +180,20 @@ fun CompleteProfileScreen(
 
                         // Validate cơ bản - CHẠY TRÊN UI THREAD
                         if (mssv.isBlank() || phone.isBlank() || institute.isBlank() || classCode.isBlank()) {
-                            msg = "❌ Vui lòng nhập đủ MSSV, SĐT, Viện và Lớp"
+                            msg = " Vui lòng nhập đủ MSSV, SĐT, Viện và Lớp"
                             return@PrimaryButton
                         }
                         if (password.length < 8) {
-                            msg = "❌ Mật khẩu phải có ít nhất 8 ký tự"
+                            msg = " Mật khẩu phải có ít nhất 8 ký tự"
                             return@PrimaryButton
                         }
                         if (password != confirm) {
-                            msg = "❌ Mật khẩu xác nhận không khớp"
+                            msg = " Mật khẩu xác nhận không khớp"
                             return@PrimaryButton
                         }
 
                         if (inPreview) {
-                            msg = "✅ (Preview) Giả lập lưu hồ sơ"
+                            msg = " (Preview) Giả lập lưu hồ sơ"
                             onCompleted()
                             return@PrimaryButton
                         }
@@ -202,15 +202,15 @@ fun CompleteProfileScreen(
                             loading = true
 
                             // ĐẢM BẢO UI UPDATE CHẠY TRÊN MAIN THREAD
-                            msg = "⏳ Đang lưu dữ liệu..."
+                            msg = " Đang lưu dữ liệu..."
 
                             try {
                                 // 1) Lưu hồ sơ
-                                msg = "📝 Đang lưu thông tin hồ sơ..."
+                                msg = " Đang lưu thông tin hồ sơ..."
                                 repo?.completeProfile(uid, mssv, phone, institute, classCode)
 
                                 // 2) Thử link email/password (bỏ qua lỗi)
-                                msg = "🔗 Đang liên kết tài khoản..."
+                                msg = " Đang liên kết tài khoản..."
                                 try {
                                     repo?.linkEmailPassword(emailDefault, password)
                                 } catch (e: Exception) {
@@ -223,14 +223,14 @@ fun CompleteProfileScreen(
                                 } catch (_: Exception) {}
 
                                 // 4) Thành công
-                                msg = "✅ Hoàn tất hồ sơ thành công! Đang chuyển trang..."
+                                msg = " Hoàn tất hồ sơ thành công! Đang chuyển trang..."
                                 delay(1000) // Cho user đọc thông báo
 
                                 onCompleted()
 
                             } catch (e: Exception) {
                                 // Hiển thị lỗi cụ thể
-                                msg = "❌ Lỗi: ${e.message ?: "Không xác định"}"
+                                msg = " Lỗi: ${e.message ?: "Không xác định"}"
                             } finally {
                                 loading = false
                             }

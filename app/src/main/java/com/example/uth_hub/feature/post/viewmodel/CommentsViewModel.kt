@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class CommentsViewModel(
@@ -43,12 +43,20 @@ class CommentsViewModel(
     private val _replyingTo = MutableStateFlow<CommentModel?>(null)
     val replyingTo: StateFlow<CommentModel?> = _replyingTo.asStateFlow()
 
+    // ==== EDIT COMMENT (NEW) ====
+    private val _editingComment = MutableStateFlow<CommentModel?>(null)
+    val editingComment: StateFlow<CommentModel?> = _editingComment.asStateFlow()
+
     // ==== MEDIA CHO COMMENT ====
     private val _commentMediaUris = MutableStateFlow<List<Uri>>(emptyList())
     val commentMediaUris: StateFlow<List<Uri>> = _commentMediaUris.asStateFlow()
 
     private val _commentMediaType = MutableStateFlow<String?>(null)  // "image" hoặc "video"
     val commentMediaType: StateFlow<String?> = _commentMediaType.asStateFlow()
+
+    // current user id (dùng để check quyền)
+    val currentUserId: String?
+        get() = auth.currentUser?.uid
 
     init {
         loadPost()
@@ -72,8 +80,14 @@ class CommentsViewModel(
     private fun observeComments() {
         repo.observeComments(postId)
             .onEach { list ->
-                // Ở đây sau này bạn có thể set likedByMe dựa trên uid nếu muốn
                 _comments.value = list
+
+                // đồng bộ lại replying / editing nếu list thay đổi
+                val replyId = _replyingTo.value?.id
+                val editId = _editingComment.value?.id
+
+                _replyingTo.value = replyId?.let { id -> list.find { it.id == id } }
+                _editingComment.value = editId?.let { id -> list.find { it.id == id } }
             }
             .catch { e ->
                 _error.value = e.message
@@ -101,10 +115,54 @@ class CommentsViewModel(
 
     fun startReplyTo(comment: CommentModel) {
         _replyingTo.value = comment
+        // nếu đang chỉnh sửa thì bỏ trạng thái chỉnh sửa
+        _editingComment.value = null
     }
 
     fun clearReply() {
         _replyingTo.value = null
+    }
+
+    // ============ EDIT COMMENT (NEW) ============
+
+    fun startEditComment(comment: CommentModel) {
+        val uid = auth.currentUser?.uid
+        if (uid == null || comment.authorId != uid) return
+
+        _editingComment.value = comment
+        _commentText.value = comment.text
+
+        // sửa text => tạm thời không sửa media
+        clearReply()
+        clearMedia()
+    }
+
+    fun cancelEditComment() {
+        _editingComment.value = null
+    }
+
+    fun deleteComment(comment: CommentModel) {
+        viewModelScope.launch {
+            val uid = auth.currentUser?.uid
+            if (uid == null || comment.authorId != uid) {
+                _error.value = "Bạn không thể xóa bình luận của người khác"
+                return@launch
+            }
+
+            try {
+                repo.deleteComment(postId, comment)
+
+                if (_editingComment.value?.id == comment.id) {
+                    _editingComment.value = null
+                    _commentText.value = ""
+                }
+                if (_replyingTo.value?.id == comment.id) {
+                    _replyingTo.value = null
+                }
+            } catch (e: Exception) {
+                _error.value = e.message
+            }
+        }
     }
 
     // ============ LIKE / SAVE POST ============
@@ -174,13 +232,34 @@ class CommentsViewModel(
         }
     }
 
-    // ============ SEND COMMENT ============
+    // ============ SEND COMMENT (NEW LOGIC) ============
 
     fun sendComment() {
         val text = commentText.value.trim()
         val medias = commentMediaUris.value
         val type = commentMediaType.value
         val parentId = replyingTo.value?.id
+        val editing = editingComment.value
+
+        // nếu đang chỉnh sửa: chỉ update text, không tạo comment mới
+        if (editing != null) {
+            if (text.isEmpty()) return
+            if (_sending.value) return
+
+            viewModelScope.launch {
+                _sending.value = true
+                try {
+                    repo.editCommentText(postId, editing.id, text)
+                    _commentText.value = ""
+                    _editingComment.value = null
+                } catch (e: Exception) {
+                    _error.value = e.message
+                } finally {
+                    _sending.value = false
+                }
+            }
+            return
+        }
 
         // Không cho gửi nếu không có text và cũng không có media
         if (text.isEmpty() && medias.isEmpty()) return

@@ -1,6 +1,7 @@
 package com.example.uth_hub.feature.post.ui.component
 
 import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -42,7 +43,11 @@ fun CommentInputBar(
     onPickMedia: () -> Unit,
     //  icon camera chụp ảnh
     onOpenCamera: () -> Unit,
-    onClearMedia: () -> Unit
+    onClearMedia: () -> Unit,
+    // thông tin trả lời ai
+    replyToAuthorName: String?,
+    onClickReplyAuthor: () -> Unit,
+    onCancelReply: () -> Unit
 ) {
     Surface(
         tonalElevation = 0.dp,
@@ -62,6 +67,35 @@ fun CommentInputBar(
                     onClearMedia = onClearMedia
                 )
                 Spacer(Modifier.height(6.dp))
+            }
+
+            //  dòng "Đang trả lời {authorName} - Hủy"
+            if (replyToAuthorName != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Đang trả lời ",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = replyToAuthorName,
+                        fontSize = 12.sp,
+                        color = ColorCustom.primary,
+                        modifier = Modifier.clickable { onClickReplyAuthor() }
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "· Hủy",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.clickable { onCancelReply() }
+                    )
+                }
             }
 
             Row(

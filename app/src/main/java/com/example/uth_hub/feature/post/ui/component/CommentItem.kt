@@ -1,6 +1,8 @@
 package com.example.uth_hub.feature.post.ui.component
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,13 +32,19 @@ import com.example.uth_hub.feature.post.domain.model.CommentModel
 import com.google.firebase.Timestamp
 import java.util.concurrent.TimeUnit
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CommentItem(
     comment: CommentModel,
+    nowMillis: Long, // truyền từ CommentsListSection xuống
     onOpenProfile: (String) -> Unit,
     onLikeClick: (CommentModel) -> Unit,
     onReplyClick: (CommentModel) -> Unit,
-    nowMillis: Long // truyền từ CommentsListSection xuống
+    // NEW: thông tin người đang được reply (comment cha) – dùng cho reply
+    replyToAuthorName: String? = null,
+    replyToAuthorId: String? = null,
+    // NEW: long-press để mở menu
+    onLongClick: (CommentModel) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -56,7 +64,7 @@ fun CommentItem(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .clickable { onOpenProfile(comment.authorId) }, // 🔹 click avatar → mở profile
+                .clickable { onOpenProfile(comment.authorId) }, // click avatar → mở profile
             contentScale = ContentScale.Crop
         )
 
@@ -67,27 +75,67 @@ fun CommentItem(
         ) {
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = androidx.compose.ui.graphics.Color(0xFFF2F2F2)
+                color = androidx.compose.ui.graphics.Color(0xFFF2F2F2),
+                modifier = Modifier
+                    .combinedClickable(
+                        onClick = { /* không làm gì khi click bình thường */ },
+                        onLongClick = { onLongClick(comment) }
+                    )
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
+                    // Tên tác giả comment
                     Text(
                         text = comment.authorName,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
                         color = ColorCustom.secondText,
                         modifier = Modifier.clickable {
-                            onOpenProfile(comment.authorId) // 🔹 click tên → mở profile
+                            onOpenProfile(comment.authorId) // click tên → mở profile
                         }
                     )
                     Spacer(Modifier.height(2.dp))
+
+                    // Nội dung comment (có xử lý mention của người được reply)
                     if (comment.text.isNotBlank()) {
-                        Text(
-                            text = comment.text,
-                            fontSize = 14.sp,
-                            color = ColorCustom.secondText
-                        )
+                        val rawText = comment.text
+
+                        if (!replyToAuthorName.isNullOrBlank() &&
+                            rawText.startsWith(replyToAuthorName)
+                        ) {
+                            val rest = rawText.removePrefix(replyToAuthorName).trimStart()
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Tên người bị reply – click sang profile họ
+                                Text(
+                                    text = replyToAuthorName,
+                                    fontSize = 14.sp,
+                                    color = ColorCustom.primary,
+                                    modifier = Modifier.clickable {
+                                        val targetId = replyToAuthorId ?: comment.authorId
+                                        onOpenProfile(targetId)
+                                    }
+                                )
+
+                                if (rest.isNotBlank()) {
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = rest,
+                                        fontSize = 14.sp,
+                                        color = ColorCustom.secondText
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = rawText,
+                                fontSize = 14.sp,
+                                color = ColorCustom.secondText
+                            )
+                        }
                     }
 
                     // Media (ảnh / video)

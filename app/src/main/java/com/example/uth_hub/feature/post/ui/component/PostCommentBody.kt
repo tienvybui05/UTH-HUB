@@ -1,5 +1,6 @@
 package com.example.uth_hub.feature.post.ui.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,13 +11,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.uth_hub.feature.post.domain.model.CommentModel
 import com.example.uth_hub.feature.post.domain.model.PostModel
-import androidx.compose.runtime.*
 import kotlinx.coroutines.delay
 
 @Composable
@@ -24,12 +25,16 @@ fun PostCommentBody(
     modifier: Modifier = Modifier,
     post: PostModel?,
     comments: List<CommentModel>,
+    // id của comment đang được trả lời (để highlight)
+    replyingCommentId: String?,
     loading: Boolean,
     onToggleLike: () -> Unit,
     onToggleSave: () -> Unit,
     onCommentLike: (CommentModel) -> Unit,
     onReplyClick: (CommentModel) -> Unit,
-    onOpenProfile: (String) -> Unit
+    onOpenProfile: (String) -> Unit,
+    // NEW: long-press comment
+    onCommentLongClick: (CommentModel) -> Unit
 ) {
     if (loading && post == null) {
         Box(
@@ -52,9 +57,11 @@ fun PostCommentBody(
 
         CommentsListSection(
             comments = comments,
+            replyingCommentId = replyingCommentId,
             onCommentLike = onCommentLike,
             onReplyClick = onReplyClick,
-            onOpenProfile = onOpenProfile
+            onOpenProfile = onOpenProfile,
+            onCommentLongClick = onCommentLongClick
         )
     }
 }
@@ -86,11 +93,13 @@ fun PostDetailSection(
 @Composable
 fun CommentsListSection(
     comments: List<CommentModel>,
+    replyingCommentId: String?,
     onCommentLike: (CommentModel) -> Unit,
     onReplyClick: (CommentModel) -> Unit,
-    onOpenProfile: (String) -> Unit
+    onOpenProfile: (String) -> Unit,
+    onCommentLongClick: (CommentModel) -> Unit
 ) {
-    // ⏱ 1 timer duy nhất cho cả list comment
+    // 1 timer duy nhất cho cả list comment
     var nowMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(Unit) {
@@ -109,6 +118,8 @@ fun CommentsListSection(
             .filter { !it.parentCommentId.isNullOrEmpty() }
             .groupBy { it.parentCommentId!! }
     }
+
+    val highlightColor = Color(0xFFE5F6FB) // màu nền khi comment được chọn để trả lời
 
     LazyColumn(
         modifier = Modifier
@@ -129,13 +140,30 @@ fun CommentsListSection(
             }
         } else {
             items(rootComments, key = { it.id }) { c ->
-                CommentItem(
-                    comment = c,
-                    nowMillis = nowMillis,   //  truyền xuống
-                    onOpenProfile = onOpenProfile,
-                    onLikeClick = onCommentLike,
-                    onReplyClick = onReplyClick
-                )
+                // bọc CommentItem trong Box để đổi background khi đang trả lời
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp)
+                        .then(
+                            if (replyingCommentId == c.id) {
+                                Modifier
+                                    .padding(horizontal = 2.dp)
+                                    .background(highlightColor)
+                            } else {
+                                Modifier
+                            }
+                        )
+                ) {
+                    CommentItem(
+                        comment = c,
+                        nowMillis = nowMillis,
+                        onOpenProfile = onOpenProfile,
+                        onLikeClick = onCommentLike,
+                        onReplyClick = onReplyClick,
+                        onLongClick = onCommentLongClick
+                    )
+                }
 
                 // hiển thị các reply (nếu có)
                 val replies = repliesByParent[c.id].orEmpty()
@@ -146,13 +174,31 @@ fun CommentsListSection(
                             .padding(start = 48.dp)
                     ) {
                         replies.forEach { r ->
-                            CommentItem(
-                                comment = r,
-                                nowMillis = nowMillis,
-                                onOpenProfile = onOpenProfile,
-                                onLikeClick = onCommentLike,
-                                onReplyClick = onReplyClick
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp)
+                                    .then(
+                                        if (replyingCommentId == r.id) {
+                                            Modifier
+                                                .padding(horizontal = 2.dp)
+                                                .background(highlightColor)
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
+                            ) {
+                                CommentItem(
+                                    comment = r,
+                                    nowMillis = nowMillis,
+                                    onOpenProfile = onOpenProfile,
+                                    onLikeClick = onCommentLike,
+                                    onReplyClick = onReplyClick,
+                                    replyToAuthorName = c.authorName,
+                                    replyToAuthorId = c.authorId,
+                                    onLongClick = onCommentLongClick
+                                )
+                            }
                         }
                     }
                 }
