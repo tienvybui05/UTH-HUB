@@ -83,4 +83,17 @@ class ProfileViewModel : ViewModel() {
             }
         }
     }
+    fun updateUserProfile(
+        mssv: String,
+        phone: String,
+        institute: String,
+        classCode: String
+    ) {
+        viewModelScope.launch {
+            try {
+                repo.updateUserProfile(mssv, phone, institute, classCode)
+            } catch (_: Exception) {}
+        }
+    }
+
 }

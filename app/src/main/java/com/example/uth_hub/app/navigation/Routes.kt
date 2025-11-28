@@ -11,12 +11,13 @@ object Routes {
     const val ReportedPost = "reportedPost"
     const val LikedPost = "likedPosts"
     const val SavedPost = "savedPosts"
-    const val ChangePassword = "change_password"
-    const val AboutTerms = "about_terms"
+    const val ChangePassword = "changePassword"
+    const val AboutTerms = "aboutTerms"
     const val PostComment = "postComment"
     const val OtherProfile = "otherProfile"
 
     const val  MyPostAdmin  ="myPostAdmin"
+    const val EditProfile = "editProfile"
 
 
 }

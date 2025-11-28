@@ -104,6 +104,26 @@ class ProfileRepository(
             )
         ).await()
     }
+    suspend fun updateUserProfile(
+        mssv: String,
+        phone: String,
+        institute: String,
+        classCode: String
+    ) {
+        val uid = auth.currentUser?.uid ?: return
+        db.collection("users")
+            .document(uid)
+            .update(
+                mapOf(
+                    "mssv" to mssv,
+                    "phone" to phone,
+                    "institute" to institute,
+                    "classCode" to classCode,
+                    "updatedAt" to System.currentTimeMillis()
+                )
+            )
+            .await()
+    }
 
     fun signOut() = auth.signOut()
 }

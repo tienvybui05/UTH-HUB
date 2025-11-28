@@ -169,7 +169,9 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                     code = user?.classCode ?: "—",
                     avatarUrl = user?.photoUrl,
                     isOwner = true,
-                    onEditClick = { /* TODO: sửa thông tin */ },
+                    onEditClick = {
+                        navController.navigate(Routes.EditProfile)
+                    },
                     onShareClick = { showShareProfile = true }
                 )
             }

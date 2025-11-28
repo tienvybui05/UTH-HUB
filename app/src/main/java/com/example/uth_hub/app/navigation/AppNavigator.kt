@@ -17,6 +17,7 @@ import com.example.uth_hub.feature.notifications.ui.NotificationsScreen
 import com.example.uth_hub.feature.post.ui.*
 import com.example.uth_hub.feature.profile.ui.Profile
 import com.example.uth_hub.feature.profile.ui.AboutTermsScreen
+import com.example.uth_hub.feature.profile.ui.EditProfileScreen
 import com.example.uth_hub.feature.profile.ui.OtherProfileScreen
 import com.example.uth_hub.feature.auth.AuthConst
 import com.google.firebase.auth.FirebaseAuth
@@ -243,6 +244,10 @@ fun NavGraph(
                     onResetDone = { navController.popBackStack() },
                     onBack = { navController.popBackStack() }
                 )
+            }
+
+            composable(Routes.EditProfile) {
+                EditProfileScreen(navController)
             }
 
             // ============================
