@@ -4,6 +4,8 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.ActivityCompat
@@ -13,6 +15,7 @@ import com.example.uth_hub.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import android.util.Log
+import com.example.uth_hub.app.MainActivity
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -26,12 +29,13 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val title = message.notification?.title ?: "UTH-Hub"
         val body = message.notification?.body ?: "Bạn có thông báo mới!"
+        val postId = message.data["postId"] ?: ""
 
-        showNotification(title, body)
+        showNotification(title, body,postId)
     }
 
     @SuppressLint("MissingPermission") // ⚡ Chỉ suppress nếu đã check permission
-    private fun showNotification(title: String, body: String) {
+    private fun showNotification(title: String, body: String,postId: String) {
         val channelId = "uth_hub_channel"
 
         // ===== 🔥 Tạo Notification Channel cho Android 8+ =====
@@ -44,13 +48,25 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
+        // Intent để mở app + truyền postId
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("postId", postId)
+        }
 
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         val notification = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_notification)   // phải có icon
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
             .build()
 
         // ===== 🔥 FIX WARNING – CHECK QUYỀN TRƯỚC KHI notify =====

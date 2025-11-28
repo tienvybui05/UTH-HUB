@@ -50,6 +50,16 @@ class MainActivity : ComponentActivity() {
 
                     val navController = rememberNavController()
 
+// ⭐ XỬ LÝ KHI BẤM VÀO THÔNG BÁO FCM ⭐
+                    LaunchedEffect(Unit) {
+                        val postId = intent.getStringExtra("postId")
+                        if (!postId.isNullOrBlank()) {
+                            intent.removeExtra("postId") // tránh mở lại lần sau
+                            navController.navigate("postComment/$postId")
+                        }
+                    }
+
+
                     // Lưu FCM token
                     LaunchedEffect(Unit) {
                         FirebaseMessaging.getInstance().token.addOnSuccessListener { token ->
