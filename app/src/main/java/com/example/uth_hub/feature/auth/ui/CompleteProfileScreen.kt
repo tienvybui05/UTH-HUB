@@ -3,6 +3,7 @@
 package com.example.uth_hub.feature.auth.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -80,180 +81,172 @@ fun CompleteProfileScreen(
             )
         }
 
-        Column(
+        // ⚡ SỬA Ở ĐÂY — DÙNG LazyColumn THAY CHO Column
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(bottom = 50.dp)
         ) {
-            Spacer(Modifier.height(160.dp))
-            Box(Modifier.offset(y = (-20).dp)) {
-                AuthCard {
-                    Text(
-                        text = "Hoàn tất hồ sơ",
-                        color = ColorCustom.secondText,
-                        fontSize = 25.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+            item {
+                Spacer(Modifier.height(160.dp))
+            }
 
-                    // MSSV
-                    UthTextField(
-                        label = "Mã số sinh viên",
-                        value = mssv,
-                        onValueChange = { mssv = it }
-                    )
-                    Spacer(Modifier.height(6.dp))
-
-                    // SĐT
-                    UthTextField(
-                        label = "Số điện thoại",
-                        value = phone,
-                        onValueChange = { phone = it }
-                    )
-                    Spacer(Modifier.height(6.dp))
-
-                    // Viện (Dropdown)
-                    ExposedDropdownMenuBox(
-                        expanded = instituteExpanded,
-                        onExpandedChange = { instituteExpanded = !instituteExpanded }
-                    ) {
-                        TextField(
-                            value = institute,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Viện") },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = instituteExpanded)
-                            }
-                        )
-                        ExposedDropdownMenu(
-                            expanded = instituteExpanded,
-                            onDismissRequest = { instituteExpanded = false }
-                        ) {
-                            INSTITUTES.forEach { item ->
-                                DropdownMenuItem(
-                                    text = { Text(item) },
-                                    onClick = {
-                                        institute = item
-                                        instituteExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(6.dp))
-
-                    // Lớp
-                    UthTextField(
-                        label = "Lớp",
-                        value = classCode,
-                        onValueChange = { classCode = it }
-                    )
-                    Spacer(Modifier.height(6.dp))
-
-                    // Mật khẩu
-                    PasswordField(
-                        label = "Mật khẩu",
-                        password = password,
-                        onValueChange = { password = it }
-                    )
-                    Spacer(Modifier.height(6.dp))
-
-                    // Xác nhận mật khẩu
-                    PasswordField(
-                        label = "Xác nhận mật khẩu",
-                        password = confirm,
-                        onValueChange = { confirm = it }
-                    )
-                    Spacer(Modifier.height(12.dp))
-
-                    // Nút Lưu & Tiếp tục
-                    PrimaryButton(
-                        text = if (loading) "Đang lưu..." else "Lưu & tiếp tục",
-                        enabled = !loading
-                    ) {
-                        // Clear message trước
-                        msg = null
-
-                        // Validate cơ bản - CHẠY TRÊN UI THREAD
-                        if (mssv.isBlank() || phone.isBlank() || institute.isBlank() || classCode.isBlank()) {
-                            msg = " Vui lòng nhập đủ MSSV, SĐT, Viện và Lớp"
-                            return@PrimaryButton
-                        }
-                        if (password.length < 8) {
-                            msg = " Mật khẩu phải có ít nhất 8 ký tự"
-                            return@PrimaryButton
-                        }
-                        if (password != confirm) {
-                            msg = " Mật khẩu xác nhận không khớp"
-                            return@PrimaryButton
-                        }
-
-                        if (inPreview) {
-                            msg = " (Preview) Giả lập lưu hồ sơ"
-                            onCompleted()
-                            return@PrimaryButton
-                        }
-
-                        scope.launch {
-                            loading = true
-
-                            // ĐẢM BẢO UI UPDATE CHẠY TRÊN MAIN THREAD
-                            msg = " Đang lưu dữ liệu..."
-
-                            try {
-                                // 1) Lưu hồ sơ
-                                msg = " Đang lưu thông tin hồ sơ..."
-                                repo?.completeProfile(uid, mssv, phone, institute, classCode)
-
-                                // 2) Thử link email/password (bỏ qua lỗi)
-                                msg = " Đang liên kết tài khoản..."
-                                try {
-                                    repo?.linkEmailPassword(emailDefault, password)
-                                } catch (e: Exception) {
-                                    // Bỏ qua lỗi link
-                                }
-
-                                // 3) Thử reload Auth (bỏ qua lỗi)
-                                try {
-                                    FirebaseAuth.getInstance().currentUser?.reload()
-                                } catch (_: Exception) {}
-
-                                // 4) Thành công
-                                msg = " Hoàn tất hồ sơ thành công! Đang chuyển trang..."
-                                delay(1000) // Cho user đọc thông báo
-
-                                onCompleted()
-
-                            } catch (e: Exception) {
-                                // Hiển thị lỗi cụ thể
-                                msg = " Lỗi: ${e.message ?: "Không xác định"}"
-                            } finally {
-                                loading = false
-                            }
-                        }
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    // Hiển thị thông báo - ĐƠN GIẢN HÓA
-                    if (msg != null) {
+            item {
+                Box(Modifier.offset(y = (-20).dp)) {
+                    AuthCard {
                         Text(
-                            text = msg!!,
-                            color = when {
-                                msg!!.contains("✅") -> Color(0xFF388E3C) // Green
-                                msg!!.contains("❌") -> Color(0xFFD32F2F) // Red
-                                msg!!.contains("⏳") -> Color(0xFF757575) // Gray
-                                else -> Color(0xFF1976D2) // Blue
-                            },
+                            text = "Hoàn tất hồ sơ",
+                            color = ColorCustom.secondText,
+                            fontSize = 25.sp,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 8.dp)
+                            modifier = Modifier.fillMaxWidth()
                         )
+
+                        // MSSV
+                        UthTextField(
+                            label = "Mã số sinh viên",
+                            value = mssv,
+                            onValueChange = { mssv = it }
+                        )
+                        Spacer(Modifier.height(6.dp))
+
+                        // SĐT
+                        UthTextField(
+                            label = "Số điện thoại",
+                            value = phone,
+                            onValueChange = { phone = it }
+                        )
+                        Spacer(Modifier.height(6.dp))
+
+                        // Viện (Dropdown)
+                        ExposedDropdownMenuBox(
+                            expanded = instituteExpanded,
+                            onExpandedChange = { instituteExpanded = !instituteExpanded }
+                        ) {
+                            TextField(
+                                value = institute,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Viện") },
+                                modifier = Modifier
+                                    .menuAnchor()
+                                    .fillMaxWidth(),
+                                trailingIcon = {
+                                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = instituteExpanded)
+                                }
+                            )
+                            ExposedDropdownMenu(
+                                expanded = instituteExpanded,
+                                onDismissRequest = { instituteExpanded = false }
+                            ) {
+                                INSTITUTES.forEach { item ->
+                                    DropdownMenuItem(
+                                        text = { Text(item) },
+                                        onClick = {
+                                            institute = item
+                                            instituteExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(6.dp))
+
+                        // Lớp
+                        UthTextField(
+                            label = "Lớp",
+                            value = classCode,
+                            onValueChange = { classCode = it }
+                        )
+                        Spacer(Modifier.height(6.dp))
+
+                        // Mật khẩu
+                        PasswordField(
+                            label = "Mật khẩu",
+                            password = password,
+                            onValueChange = { password = it }
+                        )
+                        Spacer(Modifier.height(6.dp))
+
+                        // Xác nhận mật khẩu
+                        PasswordField(
+                            label = "Xác nhận mật khẩu",
+                            password = confirm,
+                            onValueChange = { confirm = it }
+                        )
+                        Spacer(Modifier.height(12.dp))
+
+                        // Nút Lưu & Tiếp tục
+                        PrimaryButton(
+                            text = if (loading) "Đang lưu..." else "Lưu & tiếp tục",
+                            enabled = !loading
+                        ) {
+                            msg = null
+
+                            // Validate
+                            if (mssv.isBlank() || phone.isBlank() || institute.isBlank() || classCode.isBlank()) {
+                                msg = "Vui lòng nhập đủ MSSV, SĐT, Viện và Lớp"
+                                return@PrimaryButton
+                            }
+                            if (password.length < 8) {
+                                msg = "Mật khẩu phải có ít nhất 8 ký tự"
+                                return@PrimaryButton
+                            }
+                            if (password != confirm) {
+                                msg = "Mật khẩu xác nhận không khớp"
+                                return@PrimaryButton
+                            }
+
+                            if (inPreview) {
+                                msg = "(Preview) Giả lập lưu hồ sơ"
+                                onCompleted()
+                                return@PrimaryButton
+                            }
+
+                            scope.launch {
+                                loading = true
+                                msg = "Đang lưu dữ liệu..."
+
+                                try {
+                                    // 1) Lưu hồ sơ
+                                    repo?.completeProfile(uid, mssv, phone, institute, classCode)
+
+                                    // 2) Link email/password
+                                    try {
+                                        repo?.linkEmailPassword(emailDefault, password)
+                                    } catch (_: Exception) {}
+
+                                    // 3) Reload auth
+                                    try {
+                                        FirebaseAuth.getInstance().currentUser?.reload()
+                                    } catch (_: Exception) {}
+
+                                    msg = "Hoàn tất hồ sơ thành công! Đang chuyển trang..."
+                                    delay(1000)
+                                    onCompleted()
+
+                                } catch (e: Exception) {
+                                    msg = "Lỗi: ${e.message ?: "Không xác định"}"
+                                } finally {
+                                    loading = false
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        if (msg != null) {
+                            Text(
+                                text = msg!!,
+                                color = Color(0xFF1976D2),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp)
+                            )
+                        }
                     }
                 }
             }
