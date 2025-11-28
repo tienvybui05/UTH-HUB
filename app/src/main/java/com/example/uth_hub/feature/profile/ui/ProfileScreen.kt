@@ -84,6 +84,11 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                     showSettings = false
                     navController.navigate(Routes.LikedPost)
                 },
+                //  Chỉnh sửa thông tin
+                onGoEditInfo = {
+                    showSettings = false
+                    navController.navigate(Routes.EditProfile)
+                },
 
                 //  Thay đổi ảnh đại diện
                 onGoChangeAvatar = {
