@@ -33,6 +33,8 @@ import com.example.uth_hub.feature.auth.ui.component.UthTextField
 import com.example.uth_hub.feature.profile.ui.components.ChangeAvatarSheet
 import com.example.uth_hub.feature.profile.util.rememberAvatarPicker
 import com.example.uth_hub.feature.profile.viewmodel.ProfileViewModel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 // Danh sách 7 viện
 private val INSTITUTES = listOf(
@@ -58,6 +60,9 @@ fun EditProfileScreen(
     var classCode by remember { mutableStateOf(user.classCode ?: "") }
     var institute by remember { mutableStateOf(user.institute ?: "") }
     var instituteExpanded by remember { mutableStateOf(false) }
+    var loading by remember { mutableStateOf(false) }
+    var msg by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     var showAvatarSheet by remember { mutableStateOf(false) }
 
@@ -149,7 +154,7 @@ fun EditProfileScreen(
                             )
                             Spacer(Modifier.height(6.dp))
 
-                            // SĐT
+                            // Số điện thoại
                             UthTextField(
                                 label = "Số điện thoại",
                                 value = phone,
@@ -191,6 +196,7 @@ fun EditProfileScreen(
                                     }
                                 }
                             }
+
                             Spacer(Modifier.height(6.dp))
 
                             // Lớp
@@ -201,20 +207,57 @@ fun EditProfileScreen(
                             )
                             Spacer(Modifier.height(20.dp))
 
-                            // 🔥 Nút Lưu dùng PrimaryButton
+
                             PrimaryButton(
-                                text = "Lưu thay đổi",
-                                enabled = true
+                                text = if (loading) "Đang lưu..." else "Lưu thay đổi",
+                                enabled = !loading
                             ) {
-                                vm.updateUserProfile(
-                                    mssv = mssv,
-                                    phone = phone,
-                                    institute = institute,
-                                    classCode = classCode
+                                msg = null
+
+                                // Validate input
+                                if (mssv.isBlank() || phone.isBlank() || institute.isBlank() || classCode.isBlank()) {
+                                    msg = "Vui lòng nhập đủ MSSV, SĐT, Viện và Lớp"
+                                    return@PrimaryButton
+                                }
+
+                                loading = true
+                                msg = "Đang lưu dữ liệu..."
+
+                                scope.launch {
+                                    try {
+                                        vm.updateUserProfile(
+                                            mssv = mssv,
+                                            phone = phone,
+                                            institute = institute,
+                                            classCode = classCode
+                                        )
+
+                                        msg = "Cập nhật thành công!"
+                                        delay(1000)
+                                        navController.popBackStack()
+
+                                    } catch (e: Exception) {
+                                        msg = "Lỗi: ${e.message ?: "Không xác định"}"
+                                    } finally {
+                                        loading = false
+                                    }
+                                }
+                            }
+
+                            // Hiển thị thông báo
+                            if (msg != null) {
+                                Text(
+                                    text = msg!!,
+                                    color = Color(0xFF1976D2),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp)
                                 )
-                                navController.popBackStack()
                             }
                         }
+
+
                     }
                 }
             }
