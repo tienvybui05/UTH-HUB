@@ -2,11 +2,13 @@ package com.example.uth_hub.feature.post.ui.component
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.ModeComment
 import androidx.compose.material.icons.rounded.Favorite
@@ -18,12 +20,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.aspectRatio
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.uth_hub.R
@@ -44,7 +48,10 @@ fun CommentItem(
     replyToAuthorName: String? = null,
     replyToAuthorId: String? = null,
     // NEW: long-press để mở menu
-    onLongClick: (CommentModel) -> Unit
+    onLongClick: (CommentModel) -> Unit,
+    // NEW: click media để mở viewer
+    onImageClick: (String) -> Unit,
+    onVideoClick: (String) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -75,7 +82,7 @@ fun CommentItem(
         ) {
             Surface(
                 shape = RoundedCornerShape(12.dp),
-                color = androidx.compose.ui.graphics.Color(0xFFF2F2F2),
+                color = Color(0xFFF2F2F2),
                 modifier = Modifier
                     .combinedClickable(
                         onClick = { /* không làm gì khi click bình thường */ },
@@ -142,43 +149,40 @@ fun CommentItem(
                     if (comment.mediaUrls.isNotEmpty()) {
                         Spacer(Modifier.height(6.dp))
 
+                        val firstUrl = comment.mediaUrls.first()
+
                         when (comment.mediaType) {
                             "video" -> {
-                                // placeholder đơn giản cho video
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
+                                // 👉 Preview video: card 16:9, có icon play, click mở full-screen có âm thanh
+                                Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .aspectRatio(16f / 9f)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color.Black)
+                                        .clickable { onVideoClick(firstUrl) },
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Outlined.ModeComment,
-                                        contentDescription = null
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        text = "Video đính kèm",
-                                        fontSize = 13.sp
+                                        imageVector = Icons.Filled.PlayArrow,
+                                        contentDescription = "Xem video",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(40.dp)
                                     )
                                 }
                             }
 
                             else -> {
-                                // mặc định: ảnh
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    comment.mediaUrls.forEach { url ->
-                                        AsyncImage(
-                                            model = url,
-                                            contentDescription = null,
-                                            modifier = Modifier
-                                                .size(110.dp)
-                                                .clip(RoundedCornerShape(8.dp)),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    }
-                                }
+                                // 👉 Ảnh: fill theo chiều ngang, giữ đúng tỉ lệ 9:16, 4:3… giống Facebook
+                                AsyncImage(
+                                    model = firstUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { onImageClick(firstUrl) },
+                                    contentScale = ContentScale.FillWidth
+                                )
                             }
                         }
                     }
@@ -195,7 +199,7 @@ fun CommentItem(
                 Text(
                     text = formatTimeAgo(comment.createdAt, nowMillis),
                     fontSize = 12.sp,
-                    color = androidx.compose.ui.graphics.Color(0xFF999999)
+                    color = Color(0xFF999999)
                 )
 
                 Spacer(Modifier.width(12.dp))

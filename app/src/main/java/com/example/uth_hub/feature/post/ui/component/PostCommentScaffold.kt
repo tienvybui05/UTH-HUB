@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -21,11 +22,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.viewinterop.AndroidView
+import coil.compose.rememberAsyncImagePainter
 import com.example.uth_hub.feature.post.domain.model.CommentModel
 import com.example.uth_hub.feature.post.domain.model.PostModel
+import com.google.android.exoplayer2.ExoPlayer
+import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.ui.PlayerView
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -65,6 +73,10 @@ fun PostCommentScaffold(
     var showActionSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+    // ảnh / video đang được xem full-screen
+    var previewImageUrl by remember { mutableStateOf<String?>(null) }
+    var previewVideoUrl by remember { mutableStateOf<String?>(null) }
+
     // click "Trả lời" trên 1 comment
     val handleReplyClick: (CommentModel) -> Unit = { comment ->
         replyTarget = comment
@@ -85,21 +97,18 @@ fun PostCommentScaffold(
         }
     }
 
-    //  Chọn ảnh / video (1 icon media)
+    //  Chọn 1 ảnh hoặc 1 video (giống Facebook: 1 media mỗi lần)
     val pickMediaLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickMultipleVisualMedia()
-    ) { uris ->
-        if (!uris.isNullOrEmpty()) {
-            val first = uris.first()
-            val mime = context.contentResolver.getType(first) ?: ""
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val mime = context.contentResolver.getType(uri) ?: ""
             val isVideo = mime.startsWith("video")
 
             if (isVideo) {
-                // Nếu là video → chỉ giữ video đầu tiên
-                onSetMedia(listOf(first), "video")
+                onSetMedia(listOf(uri), "video")
             } else {
-                // Nếu là ảnh → cho chọn nhiều
-                onSetMedia(uris, "image")
+                onSetMedia(listOf(uri), "image")
             }
         }
     }
@@ -172,7 +181,16 @@ fun PostCommentScaffold(
             onCommentLike = onCommentLike,
             onReplyClick = handleReplyClick,
             onOpenProfile = onOpenProfile,
-            onCommentLongClick = handleLongClick
+            onCommentLongClick = handleLongClick,
+            // NEW: click vào media trong comment
+            onImageClick = { url ->
+                previewVideoUrl = null
+                previewImageUrl = url
+            },
+            onVideoClick = { url ->
+                previewImageUrl = null
+                previewVideoUrl = url
+            }
         )
     }
 
@@ -209,6 +227,22 @@ fun PostCommentScaffold(
             }
         }
     }
+
+    // ===== VIEWER ẢNH FULL-SCREEN =====
+    if (previewImageUrl != null) {
+        FullscreenImageViewer(
+            imageUrl = previewImageUrl!!,
+            onDismiss = { previewImageUrl = null }
+        )
+    }
+
+    // ===== VIEWER VIDEO FULL-SCREEN (CÓ ÂM THANH) =====
+    if (previewVideoUrl != null) {
+        FullscreenVideoPlayer(
+            videoUrl = previewVideoUrl!!,
+            onDismiss = { previewVideoUrl = null }
+        )
+    }
 }
 
 // Item trong bottom sheet
@@ -230,6 +264,80 @@ private fun SheetActionItem(
             fontSize = 16.sp,
             color = if (isDestructive) Color.Red else Color(0xFF007AFF)
         )
+    }
+}
+
+// Viewer full-screen cho ảnh bình luận
+@Composable
+private fun FullscreenImageViewer(
+    imageUrl: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.95f))
+                .clickable { onDismiss() },
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(imageUrl),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+    }
+}
+
+// Viewer full-screen cho VIDEO bình luận (dùng ExoPlayer)
+@Composable
+private fun FullscreenVideoPlayer(
+    videoUrl: String,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+
+    // Tạo ExoPlayer
+    val exoPlayer = remember(videoUrl) {
+        ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(videoUrl))
+            prepare()
+            playWhenReady = true   // auto play khi mở
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer.release()
+        }
+    }
+
+    Dialog(onDismissRequest = {
+        exoPlayer.playWhenReady = false
+        onDismiss()
+    }) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            contentAlignment = Alignment.Center
+        ) {
+            AndroidView(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                factory = { ctx ->
+                    PlayerView(ctx).apply {
+                        player = exoPlayer
+                        useController = true   // có thanh play/pause, seek, volume
+                    }
+                }
+            )
+        }
     }
 }
 

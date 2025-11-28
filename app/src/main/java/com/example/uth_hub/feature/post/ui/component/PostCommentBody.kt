@@ -33,12 +33,15 @@ fun PostCommentBody(
     onCommentLike: (CommentModel) -> Unit,
     onReplyClick: (CommentModel) -> Unit,
     onOpenProfile: (String) -> Unit,
-    // NEW: long-press comment
-    onCommentLongClick: (CommentModel) -> Unit
+    // long-press comment để mở menu
+    onCommentLongClick: (CommentModel) -> Unit,
+    // click media trong comment
+    onImageClick: (String) -> Unit,
+    onVideoClick: (String) -> Unit
 ) {
     if (loading && post == null) {
         Box(
-            modifier = modifier,
+            modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             CircularProgressIndicator()
@@ -46,65 +49,12 @@ fun PostCommentBody(
         return
     }
 
-    Column(
-        modifier = modifier
-    ) {
-        PostDetailSection(
-            post = post,
-            onToggleLike = onToggleLike,
-            onToggleSave = onToggleSave
-        )
-
-        CommentsListSection(
-            comments = comments,
-            replyingCommentId = replyingCommentId,
-            onCommentLike = onCommentLike,
-            onReplyClick = onReplyClick,
-            onOpenProfile = onOpenProfile,
-            onCommentLongClick = onCommentLongClick
-        )
-    }
-}
-
-// Card bài viết ở trên
-@Composable
-fun PostDetailSection(
-    post: PostModel?,
-    onToggleLike: () -> Unit,
-    onToggleSave: () -> Unit
-) {
-    post ?: return
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp)
-    ) {
-        PostItem(
-            postModel = post,
-            onLike = { onToggleLike() },
-            onComment = { /* đang ở trang comment rồi */ },
-            onSave = { onToggleSave() }
-        )
-    }
-}
-
-// Danh sách comment
-@Composable
-fun CommentsListSection(
-    comments: List<CommentModel>,
-    replyingCommentId: String?,
-    onCommentLike: (CommentModel) -> Unit,
-    onReplyClick: (CommentModel) -> Unit,
-    onOpenProfile: (String) -> Unit,
-    onCommentLongClick: (CommentModel) -> Unit
-) {
-    // 1 timer duy nhất cho cả list comment
-    var nowMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    // ====== PHẦN TIME AGO DÙNG CHUNG ======
+    var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(Unit) {
         while (true) {
-            delay(60_000L)                    // mỗi 60 giây
+            delay(60_000L)               // mỗi 60 giây cập nhật lại label thời gian
             nowMillis = System.currentTimeMillis()
         }
     }
@@ -121,14 +71,25 @@ fun CommentsListSection(
 
     val highlightColor = Color(0xFFE5F6FB) // màu nền khi comment được chọn để trả lời
 
+    // ✅ TOÀN BỘ MÀN HÌNH LÀ 1 LAZYCOLUMN:
     LazyColumn(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
+            .background(Color(0xFFF7F7F7)),
         contentPadding = PaddingValues(bottom = 80.dp, top = 4.dp)
     ) {
+        // ----- ITEM: BÀI VIẾT Ở ĐẦU -----
+        item(key = "post") {
+            PostDetailSection(
+                post = post,
+                onToggleLike = onToggleLike,
+                onToggleSave = onToggleSave
+            )
+        }
+
+        // ----- ITEM: "CHƯA CÓ BÌNH LUẬN" -----
         if (comments.isEmpty()) {
-            item {
+            item(key = "empty_comments") {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -139,12 +100,13 @@ fun CommentsListSection(
                 }
             }
         } else {
+            // ----- ITEM: CÁC COMMENT GỐC + REPLY -----
             items(rootComments, key = { it.id }) { c ->
-                // bọc CommentItem trong Box để đổi background khi đang trả lời
+                // Comment gốc
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 2.dp)
+                        .padding(horizontal = 16.dp, vertical = 2.dp)
                         .then(
                             if (replyingCommentId == c.id) {
                                 Modifier
@@ -161,17 +123,19 @@ fun CommentsListSection(
                         onOpenProfile = onOpenProfile,
                         onLikeClick = onCommentLike,
                         onReplyClick = onReplyClick,
-                        onLongClick = onCommentLongClick
+                        onLongClick = onCommentLongClick,
+                        onImageClick = onImageClick,
+                        onVideoClick = onVideoClick
                     )
                 }
 
-                // hiển thị các reply (nếu có)
+                // Reply của comment đó (nếu có)
                 val replies = repliesByParent[c.id].orEmpty()
                 if (replies.isNotEmpty()) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(start = 48.dp)
+                            .padding(start = 48.dp, end = 16.dp)
                     ) {
                         replies.forEach { r ->
                             Box(
@@ -196,7 +160,9 @@ fun CommentsListSection(
                                     onReplyClick = onReplyClick,
                                     replyToAuthorName = c.authorName,
                                     replyToAuthorId = c.authorId,
-                                    onLongClick = onCommentLongClick
+                                    onLongClick = onCommentLongClick,
+                                    onImageClick = onImageClick,
+                                    onVideoClick = onVideoClick
                                 )
                             }
                         }
@@ -204,5 +170,28 @@ fun CommentsListSection(
                 }
             }
         }
+    }
+}
+
+// Card bài viết ở trên (giữ nguyên logic)
+@Composable
+fun PostDetailSection(
+    post: PostModel?,
+    onToggleLike: () -> Unit,
+    onToggleSave: () -> Unit
+) {
+    post ?: return
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        PostItem(
+            postModel = post,
+            onLike = { onToggleLike() },
+            onComment = { /* đang ở trang comment rồi */ },
+            onSave = { onToggleSave() }
+        )
     }
 }

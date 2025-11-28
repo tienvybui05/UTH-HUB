@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.Videocam
@@ -102,20 +102,23 @@ fun CommentInputBar(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                //  Chọn media (ảnh + video)
-                IconButton(onClick = onPickMedia) {
-                    Icon(
-                        imageVector = Icons.Outlined.Image,
-                        contentDescription = "Chọn ảnh / video"
-                    )
-                }
+                // 🔒 Khi đã chọn media thì ẩn icon gallery + camera (giống Facebook)
+                if (mediaUris.isEmpty()) {
+                    //  Chọn media (ảnh + video)
+                    IconButton(onClick = onPickMedia) {
+                        Icon(
+                            imageVector = Icons.Outlined.Image,
+                            contentDescription = "Chọn ảnh / video"
+                        )
+                    }
 
-                //  Mở camera
-                IconButton(onClick = onOpenCamera) {
-                    Icon(
-                        imageVector = Icons.Outlined.PhotoCamera,
-                        contentDescription = "Chụp ảnh"
-                    )
+                    //  Mở camera
+                    IconButton(onClick = onOpenCamera) {
+                        Icon(
+                            imageVector = Icons.Outlined.PhotoCamera,
+                            contentDescription = "Chụp ảnh"
+                        )
+                    }
                 }
 
                 OutlinedTextField(
@@ -137,7 +140,7 @@ fun CommentInputBar(
                     enabled = canSend
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Send,
+                        imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = "Gửi bình luận",
                         tint = ColorCustom.primary,
                         modifier = Modifier.size(26.dp)
@@ -181,7 +184,7 @@ private fun SelectedMediaPreviewRow(
                 }
             }
         } else {
-            //  Ảnh: hiển thị dạng list ngang
+            //  Ảnh: hiển thị dạng list ngang (thực tế giờ list chỉ có 1 phần tử vì ViewModel đã giới hạn)
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.weight(1f)

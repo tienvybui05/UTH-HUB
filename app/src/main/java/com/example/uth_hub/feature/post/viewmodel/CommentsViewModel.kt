@@ -82,6 +82,14 @@ class CommentsViewModel(
             .onEach { list ->
                 _comments.value = list
 
+                // 🔄 đồng bộ lại commentCount của Post theo số lượng comment hiện tại
+                val currentPost = _post.value
+                if (currentPost != null) {
+                    _post.value = currentPost.copy(
+                        commentCount = list.size.toLong()
+                    )
+                }
+
                 // đồng bộ lại replying / editing nếu list thay đổi
                 val replyId = _replyingTo.value?.id
                 val editId = _editingComment.value?.id
@@ -102,7 +110,8 @@ class CommentsViewModel(
     // ============ MEDIA ============
 
     fun setMedia(uris: List<Uri>, type: String) {
-        _commentMediaUris.value = uris
+        // 🔒 Chỉ giữ đúng 1 media (ảnh hoặc video) giống Facebook
+        _commentMediaUris.value = uris.take(1)
         _commentMediaType.value = type   // "image" hoặc "video"
     }
 
