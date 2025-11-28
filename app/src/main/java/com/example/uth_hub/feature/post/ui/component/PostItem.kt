@@ -7,8 +7,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -34,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -194,27 +198,63 @@ fun PostItem(
             }
 
             if (postModel.imageUrls.isNotEmpty()) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                val imageUrls = postModel.imageUrls.filter { it.isNotBlank() }
+                val spacing = 8.dp
+
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 400.dp)
                         .padding(top = 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(spacing)
                 ) {
-                    items(postModel.imageUrls) { url ->
-                        Image(
-                            painter = rememberAsyncImagePainter(model = url),
-                            contentDescription = "Ảnh bài đăng",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(12.dp))
-                                .aspectRatio(1f)
-                        )
+                    var i = 0
+                    while (i < imageUrls.size) {
+                        val remaining = imageUrls.size - i
+
+                        when {
+                            remaining == 1 -> {
+                                // 1 ảnh full width
+                                Image(
+                                    painter = rememberAsyncImagePainter(model = imageUrls[i]),
+                                    contentDescription = "Ảnh bài đăng",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(16f / 9f)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color.LightGray)
+                                )
+                                i++
+                            }
+                            else -> {
+                                // 2 ảnh trên 1 hàng, cân đều
+                                Row(modifier = Modifier.fillMaxWidth()) {
+                                    val end = minOf(i + 2, imageUrls.size)
+                                    imageUrls.subList(i, end).forEachIndexed { index, url ->
+                                        Image(
+                                            painter = rememberAsyncImagePainter(model = url),
+                                            contentDescription = "Ảnh bài đăng",
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .aspectRatio(1f)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(Color.LightGray)
+                                        )
+                                        if (index == 0 && end - i == 2) Spacer(modifier = Modifier.width(spacing))
+                                    }
+                                }
+                                i += 2
+                            }
+                        }
                     }
                 }
             }
+
+
+
+
+
         }
 
         // Actions: Like - Comment - Save

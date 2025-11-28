@@ -92,7 +92,7 @@ fun NavGraph(
                 }
 
     val startDest = startDeepLink ?: AuthRoutes.Splash
-
+    @Suppress("UnusedMaterial3ScaffoldPaddingParameter")
     Scaffold(
         bottomBar = { if (showBottomBar) BottomNavigationBar(navController) }
     ) { innerPadding ->
@@ -100,7 +100,7 @@ fun NavGraph(
         NavHost(
             navController = navController,
             startDestination = startDest,
-            modifier = modifier.padding(innerPadding)
+            modifier = modifier
         ) {
 
             // ============================

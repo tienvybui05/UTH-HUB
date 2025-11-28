@@ -290,7 +290,7 @@ fun ManagerProfile(
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = ColorCustom.primary)
                 ) {
-                    Text("Bài viết của me", fontSize = 16.sp)
+                    Text("Bài viết của tôi", fontSize = 16.sp)
                 }
 
                 Button(
