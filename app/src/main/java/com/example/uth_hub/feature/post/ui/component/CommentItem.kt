@@ -27,7 +27,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.aspectRatio
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import com.example.uth_hub.R
@@ -44,12 +43,12 @@ fun CommentItem(
     onOpenProfile: (String) -> Unit,
     onLikeClick: (CommentModel) -> Unit,
     onReplyClick: (CommentModel) -> Unit,
-    // NEW: thông tin người đang được reply (comment cha) – dùng cho reply
+    // thông tin người đang được reply (comment cha) – dùng cho reply
     replyToAuthorName: String? = null,
     replyToAuthorId: String? = null,
-    // NEW: long-press để mở menu
+    //  long-press để mở menu
     onLongClick: (CommentModel) -> Unit,
-    // NEW: click media để mở viewer
+    // click media để mở viewer
     onImageClick: (String) -> Unit,
     onVideoClick: (String) -> Unit
 ) {
@@ -153,7 +152,7 @@ fun CommentItem(
 
                         when (comment.mediaType) {
                             "video" -> {
-                                // 👉 Preview video: card 16:9, có icon play, click mở full-screen có âm thanh
+                                // Preview video: card 16:9, có icon play, click mở full-screen
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -173,7 +172,7 @@ fun CommentItem(
                             }
 
                             else -> {
-                                // 👉 Ảnh: fill theo chiều ngang, giữ đúng tỉ lệ 9:16, 4:3… giống Facebook
+                                // Ảnh: fill theo chiều ngang, giữ tỷ lệ 9:16, 4:3… (không ép 1:1)
                                 AsyncImage(
                                     model = firstUrl,
                                     contentDescription = null,
@@ -242,24 +241,3 @@ fun CommentItem(
     }
 }
 
-private fun formatTimeAgo(timestamp: Timestamp?, nowMillis: Long): String {
-    if (timestamp == null) return ""
-
-    val time = timestamp.toDate().time
-    val diffRaw = nowMillis - time
-
-    // nếu giờ máy bị chậm hơn server → diffRaw âm
-    val diff = if (diffRaw < 0) 0L else diffRaw
-
-    val minutes = TimeUnit.MILLISECONDS.toMinutes(diff)
-
-    return when {
-        minutes < 1 -> "Vừa xong"
-        minutes < 60 -> "$minutes phút"
-        minutes < 60 * 24 -> "${minutes / 60} giờ"
-        minutes < 60 * 24 * 7 -> "${minutes / (60 * 24)} ngày"
-        minutes < 60 * 24 * 30 -> "${minutes / (60 * 24 * 7)} tuần"
-        minutes < 60 * 24 * 365 -> "${minutes / (60 * 24 * 30)} tháng"
-        else -> "${minutes / (60 * 24 * 365)} năm"
-    }
-}

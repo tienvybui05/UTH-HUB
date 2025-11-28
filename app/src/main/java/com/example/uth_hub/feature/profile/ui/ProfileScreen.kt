@@ -25,15 +25,53 @@ import com.example.uth_hub.feature.profile.util.rememberAvatarPicker
 import com.example.uth_hub.feature.profile.viewmodel.ProfileViewModel
 import com.example.uth_hub.feature.deeplink.AppLinkConfig
 
+// 🔹 dùng lại các component mình đã tạo
+import com.example.uth_hub.feature.profile.ui.components.FullScreenImageDialog
+import com.example.uth_hub.feature.profile.ui.components.ProfileMediaTab
+import com.example.uth_hub.feature.profile.ui.components.rememberUserPosts
+
+// 🔹 dùng PostItem & FeedViewModel giống HomeScreen
+import com.example.uth_hub.feature.post.di.PostDI
+import com.example.uth_hub.feature.post.ui.component.PostItem
+import com.example.uth_hub.feature.post.viewmodel.FeedViewModel
+import com.example.uth_hub.feature.post.viewmodel.FeedViewModelFactory
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+
 @Composable
 fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
-    var selectedTabIndex by remember { mutableStateOf(0) }
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
     var showSettings by remember { mutableStateOf(false) }      // sheet cài đặt
     var showChangeAvatar by remember { mutableStateOf(false) }  // sheet đổi avatar
     var showShareProfile by remember { mutableStateOf(false) }
 
+    // viewer ảnh full-screen
+    var selectedImageUrl by remember { mutableStateOf<String?>(null) }
+
     val ui = vm.ui.collectAsState().value
     val user = ui.user
+
+    // 🔹 lấy posts cho tab "File phương tiện" (grid ảnh)
+    val mediaPostsState by rememberUserPosts(userId = user?.uid.orEmpty())
+
+    // 🔹 ViewModel feed giống HomeScreen để lấy danh sách bài viết & toggle like/save
+    val feedVm: FeedViewModel = viewModel(
+        factory = FeedViewModelFactory(
+            PostDI.providePostRepository(),
+            PostDI.auth
+        )
+    )
+    val allPosts by feedVm.posts.collectAsState()
+
+    // 🔹 chỉ giữ lại bài viết của chính user này
+    val userPosts = remember(allPosts, user?.uid) {
+        val uid = user?.uid
+        if (uid == null) emptyList() else allPosts.filter { it.authorId == uid }
+    }
+
+    // 🔹 repo để gọi reportPost
+    val scope = rememberCoroutineScope()
+    val postRepo = remember { PostDI.providePostRepository() }
 
     // role: nếu là admin thì chuyển sang màn admin profile
     val userRole = ui.user?.role ?: "student"
@@ -67,6 +105,12 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
             )
         },
     ) { innerPadding ->
+
+        // *** VIEWER ẢNH FULL-SCREEN ***
+        FullScreenImageDialog(
+            imageUrl = selectedImageUrl,
+            onDismiss = { selectedImageUrl = null }
+        )
 
         // *** SHEET CÀI ĐẶT ***
         if (showSettings) {
@@ -103,7 +147,6 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
                     navController.navigate(Routes.AboutTerms)
                 },
 
-
                 // Logout
                 onLogout = {
                     showSettings = false
@@ -118,7 +161,7 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
         // *** SHEET CHIA SẺ TRANG CÁ NHÂN ***
         if (showShareProfile && user != null) {
             ShareProfileSheet(
-                usernameOrMssv = user.displayName ?: "",
+                usernameOrMssv = user.displayName,
                 profileUrl = AppLinkConfig.buildProfileUrl(user.uid),
                 onDismissRequest = { showShareProfile = false }
             )
@@ -154,7 +197,7 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
             return@Scaffold
         }
 
-        val user = ui.user
+        val currentUser = ui.user
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -163,11 +206,11 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
         ) {
             item {
                 ProfileHeader(
-                    name = user?.displayName ?: "—",
-                    username = user?.mssv ?: "—",
-                    major = user?.institute ?: "—",
-                    code = user?.classCode ?: "—",
-                    avatarUrl = user?.photoUrl,
+                    name = currentUser?.displayName ?: "—",
+                    username = currentUser?.mssv ?: "—",
+                    major = currentUser?.institute ?: "—",
+                    code = currentUser?.classCode ?: "—",
+                    avatarUrl = currentUser?.photoUrl,
                     isOwner = true,
                     onEditClick = {
                         navController.navigate(Routes.EditProfile)
@@ -192,26 +235,61 @@ fun Profile(navController: NavController, vm: ProfileViewModel = viewModel()) {
             item { Spacer(Modifier.height(10.dp)) }
 
             when (selectedTabIndex) {
+                // ====================
+                //   TAB BÀI ĐĂNG
+                // ====================
                 0 -> item {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Chưa có bài viết", color = Color.White)
+                    if (userPosts.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Chưa có bài viết", color = Color.White)
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            userPosts.forEach { p ->
+                                PostItem(
+                                    postModel = p,
+                                    onLike = { feedVm.toggleLike(p.id, p.authorId) },
+                                    onComment = {
+                                        // dùng y chang HomeScreen
+                                        navController.navigate("${Routes.PostComment}/${p.id}")
+                                    },
+                                    onSave = { feedVm.toggleSave(p.id) },
+                                    onReport = {
+                                        scope.launch {
+                                            try {
+                                                postRepo.reportPost(p.id)
+                                            } catch (_: Exception) {
+                                            }
+                                        }
+                                    },
+                                    onImageClick = { url ->
+                                        selectedImageUrl = url
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
 
+                // ====================
+                //   TAB FILE PHƯƠNG TIỆN
+                // ====================
                 1 -> item {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Chưa có ảnh/video", color = Color.White)
-                    }
+                    ProfileMediaTab(
+                        state = mediaPostsState,
+                        onImageClick = { url -> selectedImageUrl = url }
+                    )
                 }
             }
 

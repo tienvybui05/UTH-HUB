@@ -102,7 +102,7 @@ fun CommentInputBar(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 🔒 Khi đã chọn media thì ẩn icon gallery + camera (giống Facebook)
+                //  Khi đã chọn media thì ẩn icon gallery + camera
                 if (mediaUris.isEmpty()) {
                     //  Chọn media (ảnh + video)
                     IconButton(onClick = onPickMedia) {
