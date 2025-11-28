@@ -127,7 +127,6 @@ NavGraph quản lý các route:
 ## 10. Quản trị viên (Admin)
 - AdminPanel:
   - xem danh sách bài báo cáo
-  - quản lý sinh viên
   - quản lý bài đăng
 - Kiểm tra quyền qua role = "admin" trong Firestore.
 
