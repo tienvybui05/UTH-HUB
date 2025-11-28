@@ -34,6 +34,7 @@ import com.example.uth_hub.feature.post.viewmodel.FeedViewModelFactory
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.window.Dialog
 import com.example.uth_hub.app.navigation.Routes
 import com.example.uth_hub.feature.admin.ui.components.EmptyPostsState
 import com.example.uth_hub.feature.admin.ui.components.InstituteDropdown
@@ -67,17 +68,19 @@ fun HomeScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val posts by vm.posts.collectAsState()
-    val isLoading by vm.isLoading.collectAsState() // ← Thêm trạng thái loading
+    val isLoading by vm.isLoading.collectAsState() // ← trạng thái loading
 
     val auth = remember { FirebaseAuth.getInstance() }
     val db = remember { FirebaseFirestore.getInstance() }
     var avatarUrl by remember { mutableStateOf("") }
     var handle by remember { mutableStateOf("") }
     var selectedInstitute by remember { mutableStateOf("Tất cả khoa") }
-    var expanded by remember { mutableStateOf(false) }
 
     // 🔹 repo để gọi reportPost (tách khỏi ViewModel cho đơn giản)
     val postRepo = remember { PostDI.providePostRepository() }
+
+    // 🔹 Ảnh bài viết đang được xem full-screen (null = không xem)
+    var fullImageUrl by remember { mutableStateOf<String?>(null) }
 
     val filteredPosts = remember(posts, selectedInstitute) {
         if (selectedInstitute == "Tất cả khoa") posts
@@ -109,7 +112,11 @@ fun HomeScreen(
             )
         }
     ) {
-        Column(modifier = Modifier.fillMaxSize().background(color = Color.White)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(color = Color.White)
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -131,12 +138,19 @@ fun HomeScreen(
                         onClick = { scope.launch { drawerState.open() } },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("☰", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = ColorCustom.primary)
+                        Text(
+                            "☰",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = ColorCustom.primary
+                        )
                     }
                     Image(
                         painter = painterResource(id = R.drawable.logouth),
                         contentDescription = "Logo Uth",
-                        modifier = Modifier.weight(2f).height(40.dp)
+                        modifier = Modifier
+                            .weight(2f)
+                            .height(40.dp)
                     )
                     Row(modifier = Modifier.weight(1f)) {}
                 }
@@ -152,16 +166,24 @@ fun HomeScreen(
                         else
                             rememberAsyncImagePainter(model = R.drawable.avartardefault),
                         contentDescription = "Avatar",
-                        modifier = Modifier.size(40.dp).clip(CircleShape),
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
                     Column {
-                        Text(text = handle.ifBlank { "@user" }, fontSize = 16.sp, color = ColorCustom.secondText)
+                        Text(
+                            text = handle.ifBlank { "@user" },
+                            fontSize = 16.sp,
+                            color = ColorCustom.secondText
+                        )
                         Text(
                             text = "Hôm nay có g hót ?",
                             fontSize = 13.sp,
                             color = Color(0xFF595959),
-                            modifier = Modifier.clickable { /* điều hướng sang CreatePost nếu muốn */ }
+                            modifier = Modifier.clickable {
+                                /* điều hướng sang CreatePost nếu muốn */
+                            }
                         )
                     }
                 }
@@ -183,7 +205,11 @@ fun HomeScreen(
                 )
             }
 
-            Column(modifier = Modifier.fillMaxWidth().padding(top= 10.dp, end = 10.dp,start =10.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp, end = 10.dp, start = 10.dp)
+            ) {
                 // Hiển thị skeleton khi đang loading
                 if (isLoading) {
                     LoadingSkeleton()
@@ -200,8 +226,10 @@ fun HomeScreen(
                             val p = filteredPosts[idx]
                             PostItem(
                                 postModel = p,
-                                onLike = { vm.toggleLike(p.id,p.authorId) },
-                                onComment = { navController.navigate("${Routes.PostComment}/${p.id}") },
+                                onLike = { vm.toggleLike(p.id, p.authorId) },
+                                onComment = {
+                                    navController.navigate("${Routes.PostComment}/${p.id}")
+                                },
                                 onSave = { vm.toggleSave(p.id) },
                                 // 🔹 Khi user bấm "Báo cáo bài viết vi phạm"
                                 onReport = {
@@ -215,12 +243,49 @@ fun HomeScreen(
                                             // TODO: hiển thị thông báo lỗi nếu cần
                                         }
                                     }
+                                },
+                                // 🔹 Click ảnh → mở viewer full-screen
+                                onImageClick = { url ->
+                                    fullImageUrl = url
                                 }
                             )
                         }
                     }
                 }
             }
+        }
+    }
+
+    // ===== Viewer ảnh full-screen cho bài viết =====
+    if (fullImageUrl != null) {
+        FullscreenPostImageViewer(
+            imageUrl = fullImageUrl!!,
+            onDismiss = { fullImageUrl = null }
+        )
+    }
+}
+
+@Composable
+private fun FullscreenPostImageViewer(
+    imageUrl: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.95f))
+                .clickable { onDismiss() },
+            contentAlignment = Alignment.Center
+        ) {
+            Image(
+                painter = rememberAsyncImagePainter(imageUrl),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                contentScale = ContentScale.Fit
+            )
         }
     }
 }

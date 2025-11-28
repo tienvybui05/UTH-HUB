@@ -13,6 +13,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.tasks.await
 
 class AuthRepository(
@@ -22,10 +23,12 @@ class AuthRepository(
     /** Tạo GoogleSignInClient */
     fun buildGoogleClient(context: Context): GoogleSignInClient {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(context.getString(
-                // lấy web client id từ google-services.json (default_web_client_id)
-                com.example.uth_hub.R.string.default_web_client_id
-            ))
+            .requestIdToken(
+                context.getString(
+                    // lấy web client id từ google-services.json (default_web_client_id)
+                    com.example.uth_hub.R.string.default_web_client_id
+                )
+            )
             .requestEmail()
             .setHostedDomain("ut.edu.vn") // <-- chỉ là hint, có thể bị bỏ qua
             .build()
@@ -115,9 +118,29 @@ class AuthRepository(
 
     /** Đăng nhập bằng MSSV + password: tra email rồi signInWithEmailAndPassword */
     suspend fun signInByMssv(mssv: String, password: String) {
-        val snap = db.collection(AuthConst.USERS).whereEqualTo("mssv", mssv).limit(1).get().await()
+        // 🔥 Bọc truy vấn Firestore để bắt PERMISSION_DENIED và convert thành lỗi "đẹp"
+        val snap = try {
+            db.collection(AuthConst.USERS)
+                .whereEqualTo("mssv", mssv)
+                .limit(1)
+                .get()
+                .await()
+        } catch (e: FirebaseFirestoreException) {
+            if (e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                // Lỗi này sẽ được ViewModel hiện dưới ô MSSV (IllegalArgumentException)
+                throw IllegalArgumentException(
+                    "Không thể tra cứu MSSV. Kiểm tra lại quyền đọc collection users trong Firestore rules."
+                )
+            } else {
+                throw e
+            }
+        }
+
         if (snap.isEmpty) throw IllegalArgumentException("MSSV không tồn tại")
-        val email = snap.documents.first().getString("email") ?: throw IllegalStateException("Email rỗng")
+
+        val email = snap.documents.first().getString("email")
+            ?: throw IllegalArgumentException("Tài khoản này chưa có email trong hồ sơ")
+
         auth.signInWithEmailAndPassword(email, password).await()
         //  🔥 CHỖ SỬA 4 — update FCM token sau khi login MSSV
         // ===============================================================

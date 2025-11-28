@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -48,13 +50,14 @@ fun CreatePost(
     )
 ) {
     var postContent by remember { mutableStateOf("") }
-    val pickedUris = remember { mutableStateListOf<Uri>() }
+    val pickedImages = remember { mutableStateListOf<Uri>() }
+    var pickedVideo by remember { mutableStateOf<Uri?>(null) }
     val ui by vm.ui.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
 
-    // --- Load profile hiện tại để lấy 4 biến author* ---
+    // --- Load profile hiện tại ---
     val auth = remember { FirebaseAuth.getInstance() }
     val db = remember { FirebaseFirestore.getInstance() }
     var authorName by remember { mutableStateOf("") }
@@ -66,7 +69,7 @@ fun CreatePost(
         val uid = auth.currentUser?.uid
         val emailLocal = auth.currentUser?.email?.substringBefore('@') ?: "user"
         authorName = auth.currentUser?.displayName ?: ""
-        authorHandle = if (authorName.isNotBlank()) "@$emailLocal" else "@$emailLocal"
+        authorHandle = "@$emailLocal"
         authorAvatarUrl = auth.currentUser?.photoUrl?.toString() ?: ""
         authorInstitute = ""
 
@@ -86,16 +89,25 @@ fun CreatePost(
             } catch (_: Exception) { }
         }
     }
-    // ---------------------------------------------------
 
-    // Photo Picker
+    // --- Pick ảnh ---
     val pickImages = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(maxItems = 9)
     ) { uris ->
-        pickedUris.addAll(uris)  // ← Thêm vào list hiện tại, không clear
+        if (pickedVideo == null) pickedImages.addAll(uris)
     }
 
-    // Camera Capture
+    // --- Pick video (1 file) ---
+    val pickVideo = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let {
+            pickedImages.clear()
+            pickedVideo = it
+        }
+    }
+
+    // --- Camera capture ảnh ---
     val takePhoto = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
@@ -108,7 +120,7 @@ fun CreatePost(
                     null
                 )
             )
-            pickedUris.add(uri)  // ← Thêm vào list hiện tại
+            if (pickedVideo == null) pickedImages.add(uri)
         }
     }
 
@@ -118,20 +130,25 @@ fun CreatePost(
                 CenterAlignedTopAppBar(
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color(0xFF00796B))
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color(0xFF00796B)
+                            )
                         }
                     },
                     title = {
                         Text("Tạo bài viết", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFF00796B))
                     },
                     actions = {
-                        val canPost = (postContent.isNotBlank() || pickedUris.isNotEmpty()) && ui.posting.not()
+                        val canPost = (postContent.isNotBlank() || pickedImages.isNotEmpty() || pickedVideo != null) && !ui.posting
                         TextButton(
                             enabled = canPost,
                             onClick = {
                                 vm.create(
                                     content = postContent.trim(),
-                                    images = pickedUris.toList(),
+                                    images = pickedImages.toList(),
+                                    video = pickedVideo,
                                     authorName = authorName.ifBlank { "User" },
                                     authorHandle = authorHandle.ifBlank { "@user" },
                                     authorInstitute = authorInstitute,
@@ -139,9 +156,12 @@ fun CreatePost(
                                 )
                             }
                         ) {
-                            Text("Đăng", fontSize = 18.sp,
+                            Text(
+                                "Đăng",
+                                fontSize = 18.sp,
                                 color = if (canPost) Color(0xFF00796B) else Color.Gray,
-                                fontWeight = FontWeight.SemiBold)
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
                     }
                 )
@@ -171,7 +191,7 @@ fun CreatePost(
                 Column {
                     Text(authorHandle.ifBlank { "@user" }, fontSize = 16.sp)
                     Text(
-                        authorInstitute.ifBlank { "Viện Công nghệ thông tin và Điện, điện tử" },
+                        authorInstitute.ifBlank { "Viện CNTT & Điện, điện tử" },
                         fontSize = 13.sp, color = Color.Gray
                     )
                 }
@@ -179,9 +199,8 @@ fun CreatePost(
 
             Spacer(Modifier.height(16.dp))
 
-            // Row chọn ảnh / chụp ảnh
+            // Chọn ảnh / chụp / video
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                // Chọn ảnh từ gallery
                 IconButton(onClick = {
                     pickImages.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 }) {
@@ -189,9 +208,15 @@ fun CreatePost(
                         tint = Color(0xFF00796B), modifier = Modifier.size(28.dp))
                 }
 
-                // Chụp ảnh camera
                 IconButton(onClick = { takePhoto.launch(null) }) {
                     Icon(Icons.Outlined.PhotoCamera, contentDescription = "Chụp ảnh",
+                        tint = Color(0xFF00796B), modifier = Modifier.size(28.dp))
+                }
+
+                IconButton(onClick = {
+                    pickVideo.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly))
+                }) {
+                    Icon(Icons.Outlined.VideoLibrary, contentDescription = "Chọn video",
                         tint = Color(0xFF00796B), modifier = Modifier.size(28.dp))
                 }
             }
@@ -211,20 +236,33 @@ fun CreatePost(
                 }
             )
 
-            // Grid preview ảnh
-            if (pickedUris.isNotEmpty()) {
+            // Preview media
+            if (pickedVideo != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color.Black),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Outlined.VideoLibrary, contentDescription = null, tint = Color.White, modifier = Modifier.size(48.dp))
+                }
+            } else if (pickedImages.isNotEmpty()) {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(3),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth().heightIn(max = 320.dp)
                 ) {
-                    items(pickedUris) { uri ->
+                    items(pickedImages) { uri ->
                         Image(
                             painter = rememberAsyncImagePainter(model = uri),
                             contentDescription = null,
                             contentScale = ContentScale.Crop,
-                            modifier = Modifier.clip(RoundedCornerShape(12.dp)).aspectRatio(1f)
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .aspectRatio(1f)
                         )
                     }
                 }
@@ -236,7 +274,10 @@ fun CreatePost(
     when {
         ui.postedId != null -> {
             LaunchedEffect(ui.postedId) {
-                postContent = ""; pickedUris.clear(); navController.popBackStack()
+                postContent = ""
+                pickedImages.clear()
+                pickedVideo = null
+                navController.popBackStack()
             }
         }
         ui.error != null -> {

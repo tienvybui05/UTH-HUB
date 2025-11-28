@@ -34,7 +34,6 @@ fun PostCommentScreen(
     val mediaType by vm.commentMediaType.collectAsState()
 
     // Đồng bộ commentCount theo số lượng comments hiện có (realtime)
-    //    -> vừa thêm / xoá comment là UI nhảy số liền, không cần reload Post.
     val postForUi = remember(post, comments) {
         post?.copy(
             commentCount = comments.size.toLong()
@@ -54,7 +53,6 @@ fun PostCommentScreen(
         onCommentTextChange = vm::onCommentTextChange,
         onSendComment = vm::sendComment,
         onToggleLike = {
-            // dùng post gốc để lấy id / authorId (không phụ thuộc commentCount)
             post?.let { p ->
                 vm.toggleLike(
                     postId = p.id,
@@ -63,8 +61,8 @@ fun PostCommentScreen(
             }
         },
         onToggleSave = vm::toggleSave,
-        onSetMedia = vm::setMedia,          //  set media cho comment
-        onClearMedia = vm::clearMedia,      //  clear media
+        onSetMedia = vm::setMedia,
+        onClearMedia = vm::clearMedia,
         onCommentLike = vm::toggleCommentLike,
         onReplyClick = vm::startReplyTo,
         onOpenProfile = { uid ->

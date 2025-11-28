@@ -19,6 +19,20 @@ import com.example.uth_hub.feature.profile.ui.components.ProfileTabBar
 import com.example.uth_hub.feature.profile.ui.components.TopBarSimple
 import com.example.uth_hub.feature.profile.ui.components.ShareProfileSheet
 
+// dùng lại components media + viewer
+import com.example.uth_hub.feature.profile.ui.components.FullScreenImageDialog
+import com.example.uth_hub.feature.profile.ui.components.ProfileMediaTab
+import com.example.uth_hub.feature.profile.ui.components.rememberUserPosts
+
+// dùng PostItem & FeedViewModel như HomeScreen
+import com.example.uth_hub.feature.post.di.PostDI
+import com.example.uth_hub.feature.post.ui.component.PostItem
+import com.example.uth_hub.feature.post.viewmodel.FeedViewModel
+import com.example.uth_hub.feature.post.viewmodel.FeedViewModelFactory
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import com.example.uth_hub.app.navigation.Routes
+
 @Composable
 fun OtherProfileScreen(
     navController: NavController,
@@ -33,11 +47,32 @@ fun OtherProfileScreen(
     // ⭐ THÊM STATE MỞ SHARE SHEET
     var showShareProfile by remember { mutableStateOf(false) }
 
+    // ⭐ FULLSCREEN IMAGE VIEWER
+    var selectedImageUrl by remember { mutableStateOf<String?>(null) }
+
     val ui: OtherProfileUiState = vm.ui.collectAsState().value
     val user = ui.user
 
     // ⭐ URL dành cho người khác
     val profileUrl = "https://uth-hub-49b77.web.app/user/$uid"
+
+    // 🔹 posts cho tab media (grid ảnh)
+    val mediaPostsState by rememberUserPosts(userId = uid)
+
+    // 🔹 FeedViewModel để lấy tất cả bài viết và filter theo uid này
+    val feedVm: FeedViewModel = viewModel(
+        factory = FeedViewModelFactory(
+            PostDI.providePostRepository(),
+            PostDI.auth
+        )
+    )
+    val allPosts by feedVm.posts.collectAsState()
+    val userPosts = remember(allPosts, uid) {
+        allPosts.filter { it.authorId == uid }
+    }
+
+    val scope = rememberCoroutineScope()
+    val postRepo = remember { PostDI.providePostRepository() }
 
     Scaffold(
         topBar = {
@@ -59,6 +94,12 @@ fun OtherProfileScreen(
             }
             return@Scaffold
         }
+
+        // ⭐ FULLSCREEN IMAGE
+        FullScreenImageDialog(
+            imageUrl = selectedImageUrl,
+            onDismiss = { selectedImageUrl = null }
+        )
 
         // ⭐ SHOW BOTTOM SHEET
         if (showShareProfile) {
@@ -85,7 +126,7 @@ fun OtherProfileScreen(
                     code = user?.classCode ?: "—",
                     avatarUrl = user?.photoUrl,
                     isOwner = false,
-                    onShareClick = { showShareProfile = true }   // ⭐ MỞ SHEET TẠI ĐÂY
+                    onShareClick = { showShareProfile = true }
                 )
             }
 
@@ -107,26 +148,59 @@ fun OtherProfileScreen(
 
             when (selectedTabIndex) {
 
+                // ====================
+                //   TAB BÀI ĐĂNG
+                // ====================
                 0 -> item {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Chưa có bài đăng", color = Color.White)
+                    if (userPosts.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Chưa có bài đăng", color = Color.White)
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            userPosts.forEach { p ->
+                                PostItem(
+                                    postModel = p,
+                                    onLike = { feedVm.toggleLike(p.id, p.authorId) },
+                                    onComment = {
+                                        navController.navigate("${Routes.PostComment}/${p.id}")
+                                    },
+                                    onSave = { feedVm.toggleSave(p.id) },
+                                    onReport = {
+                                        scope.launch {
+                                            try {
+                                                postRepo.reportPost(p.id)
+                                            } catch (_: Exception) { }
+                                        }
+                                    },
+                                    onImageClick = { url ->
+                                        selectedImageUrl = url
+                                    }
+                                )
+                            }
+                        }
                     }
                 }
 
+                // ====================
+                //   TAB FILE PHƯƠNG TIỆN
+                // ====================
                 1 -> item {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Chưa có ảnh/video", color = Color.White)
-                    }
+                    ProfileMediaTab(
+                        state = mediaPostsState,
+                        onImageClick = { url -> selectedImageUrl = url }
+                    )
                 }
             }
 

@@ -29,6 +29,7 @@ class PostRepository(
     suspend fun createPost(
         content: String,
         imageUris: List<Uri>,
+        videoUri: Uri? = null,
         authorName: String,
         authorHandle: String,
         authorInstitute: String,
@@ -59,6 +60,7 @@ class PostRepository(
             "saveCount" to 0L,
             // 🔹 mới: số lần bị báo cáo (cho admin xem)
             "reportCount" to 0L
+            // "videoUrl" nếu sau này cần có thể set thêm ở đây
         )
         doc.set(data).await()
         return doc.id
@@ -151,7 +153,6 @@ class PostRepository(
         }
     }
 
-
     // ========================
     // SAVE
     // ========================
@@ -227,6 +228,7 @@ class PostRepository(
             content = d.getString("content") ?: "",
             imageUrls = (d.get("imageUrls") as? List<*>)?.filterIsInstance<String>()
                 ?: emptyList(),
+            videoUrl = d.getString("videoUrl") ?: "",
             createdAt = d.getTimestamp("createdAt"),
             likeCount = d.getLong("likeCount") ?: 0L,
             commentCount = d.getLong("commentCount") ?: 0L,
@@ -370,7 +372,6 @@ class PostRepository(
         }
     }
 
-
     // ========================
     // EDIT COMMENT
     // ========================
@@ -486,14 +487,40 @@ class PostRepository(
     }
 
     // ========================
-    // DELETE POST (ADMIN ONLY)
+    // DELETE POST (AUTHOR OR ADMIN)
     // ========================
     suspend fun deletePost(postId: String) {
         val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not logged in")
-        if (!verifyAdminAccess()) {
-            throw IllegalStateException("User $uid is not admin. Cannot delete post $postId")
+
+        val doc = postsCol.document(postId).get().await()
+        if (!doc.exists()) return
+
+        val authorId = doc.getString("authorId")
+        val isAdmin = verifyAdminAccess()
+
+        if (uid != authorId && !isAdmin) {
+            throw IllegalStateException("Bạn không có quyền xoá bài viết này")
         }
-        postsCol.document(postId).delete().await()
+
+        doc.reference.delete().await()
+    }
+
+    // ========================
+    // DELETE POST (TÁC GIẢ TỰ XÓA)
+    // ========================
+    suspend fun deleteMyPost(postId: String) {
+        val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not logged in")
+
+        val docRef = postsCol.document(postId)
+        val snap = docRef.get().await()
+        val authorId = snap.getString("authorId")
+
+        if (authorId != uid) {
+            throw IllegalStateException("Bạn không thể xoá bài viết của người khác")
+        }
+
+        // Firestore rules cũng sẽ check lại authorId == request.auth.uid
+        docRef.delete().await()
     }
 
     private suspend fun verifyAdminAccess(): Boolean {

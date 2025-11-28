@@ -26,8 +26,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,8 +52,7 @@ import compose.icons.fontawesomeicons.regular.Comment
 import compose.icons.fontawesomeicons.solid.Clock
 import compose.icons.fontawesomeicons.solid.ExclamationTriangle
 import compose.icons.fontawesomeicons.solid.Heart
-import java.text.SimpleDateFormat
-import java.util.Locale
+import kotlinx.coroutines.delay
 
 @Composable
 fun PostItem(
@@ -57,8 +60,10 @@ fun PostItem(
     onLike: () -> Unit,
     onComment: () -> Unit,
     onSave: () -> Unit,
-    // callback business: chỉ được gọi sau khi user bấm "Có"
-    onReport: () -> Unit = {}
+    // callback business: chỉ được gọi sau khi user bấm "Có" trong dialog báo cáo
+    onReport: () -> Unit = {},
+    // click ảnh bài viết để mở full-screen
+    onImageClick: (String) -> Unit = {}
 ) {
     val expanded = remember { mutableStateOf(false) }
     val showReportDialog = remember { mutableStateOf(false) }
@@ -69,10 +74,15 @@ fun PostItem(
         else
             painterResource(id = R.drawable.avartardefault)
 
-    val dateText =
-        postModel.createdAt?.toDate()?.let {
-            SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it)
-        } ?: ""
+    //  Time-ago auto cập nhật mỗi 60s
+    var nowMillis by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000L)
+            nowMillis = System.currentTimeMillis()
+        }
+    }
+    val timeAgo = formatTimeAgo(postModel.createdAt, nowMillis)
 
     Column(
         modifier = Modifier
@@ -102,8 +112,10 @@ fun PostItem(
                     contentScale = ContentScale.Crop
                 )
                 Column {
+                    // 🔹 Dùng authorName, fallback về handle rồi @unknown
                     Text(
-                        text = postModel.authorHandle.ifBlank { "@unknown" },
+                        text = postModel.authorName
+                            .ifBlank { postModel.authorHandle.ifBlank { "@unknown" } },
                         fontSize = 18.sp,
                         lineHeight = 16.sp,
                         color = ColorCustom.secondText
@@ -116,26 +128,29 @@ fun PostItem(
                         maxLines = Int.MAX_VALUE,
                         modifier = Modifier.width(250.dp)
                     )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(3.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = dateText,
-                            fontSize = 13.sp,
-                            lineHeight = 14.sp,
-                            color = Color(0xFF595959)
-                        )
-                        Icon(
-                            imageVector = FontAwesomeIcons.Solid.Clock,
-                            contentDescription = "Ngày đăng",
-                            tint = Color(0xFF595959),
-                            modifier = Modifier.size(13.dp)
-                        )
+                    if (timeAgo.isNotEmpty()) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = timeAgo,
+                                fontSize = 13.sp,
+                                lineHeight = 14.sp,
+                                color = Color(0xFF595959)
+                            )
+                            Icon(
+                                imageVector = FontAwesomeIcons.Solid.Clock,
+                                contentDescription = "Thời gian đăng",
+                                tint = Color(0xFF595959),
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
                     }
                 }
             }
 
+            // Menu 3 chấm: Báo cáo bài viết vi phạm
             Box {
                 Icon(
                     imageVector = Icons.Outlined.MoreVert,
@@ -177,7 +192,6 @@ fun PostItem(
                         },
                         modifier = Modifier.background(color = ColorCustom.primary),
                         onClick = {
-                            // đóng menu -> mở dialog xác nhận
                             expanded.value = false
                             showReportDialog.value = true
                         }
@@ -186,7 +200,7 @@ fun PostItem(
             }
         }
 
-        // Nội dung text + ảnh (giữ y như bạn đang có, cắt gọn cho dễ nhìn)
+        // Nội dung text + ảnh
         Column(modifier = Modifier.fillMaxWidth()) {
             if (postModel.content.isNotBlank()) {
                 Text(
@@ -214,20 +228,23 @@ fun PostItem(
                         val remaining = imageUrls.size - i
 
                         when {
+                            // 🔹 1 ảnh: fill ngang, KHÔNG ép aspectRatio -> giữ đúng tỉ lệ gốc
                             remaining == 1 -> {
+                                val url = imageUrls[i]
                                 Image(
-                                    painter = rememberAsyncImagePainter(model = imageUrls[i]),
+                                    painter = rememberAsyncImagePainter(model = url),
                                     contentDescription = "Ảnh bài đăng",
-                                    contentScale = ContentScale.Crop,
+                                    contentScale = ContentScale.FillWidth,
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .aspectRatio(16f / 9f)
                                         .clip(RoundedCornerShape(12.dp))
                                         .background(Color.LightGray)
+                                        .clickable { onImageClick(url) }
                                 )
                                 i++
                             }
 
+                            // 🔹 >= 2 ảnh: dạng grid 2 ảnh vuông 1 hàng
                             else -> {
                                 Row(modifier = Modifier.fillMaxWidth()) {
                                     val end = minOf(i + 2, imageUrls.size)
@@ -241,6 +258,7 @@ fun PostItem(
                                                 .aspectRatio(1f)
                                                 .clip(RoundedCornerShape(12.dp))
                                                 .background(Color.LightGray)
+                                                .clickable { onImageClick(url) }
                                         )
                                         if (index == 0 && end - i == 2) {
                                             Spacer(modifier = Modifier.width(spacing))
@@ -337,7 +355,7 @@ fun PostItem(
             Row { /* chừa chỗ cho các action khác nếu cần */ }
         }
 
-        // 🔹 Dialog xác nhận báo cáo
+        // Dialog xác nhận báo cáo
         if (showReportDialog.value) {
             AlertDialog(
                 onDismissRequest = { showReportDialog.value = false },
@@ -347,7 +365,6 @@ fun PostItem(
                     TextButton(
                         onClick = {
                             showReportDialog.value = false
-                            // chỉ lúc này mới gọi callback business
                             onReport()
                         }
                     ) {

@@ -21,7 +21,8 @@ import com.example.uth_hub.feature.auth.viewmodel.SignInViewModel
 import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
-
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 
 @Composable
 fun SignInScreen(
@@ -138,6 +139,17 @@ fun SignInScreen(
                 TextLinkButton("SIGN UP") { onSignupClick() }
             }
 
+            // 🔥 Hiển thị lỗi chung (lỗi hệ thống, lỗi Firestore, v.v.)
+            vm.message.value?.let { msg ->
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = msg,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }

@@ -20,6 +20,7 @@ navigationCompose = "2.9.5"
 playServicesAuth = "21.4.0"
 foundationLayout = "1.9.4"
 media3Ui = "1.8.0"
+foundation = "1.9.5"
 
 [libraries]
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
@@ -64,6 +65,7 @@ firebase-ml-modeldownloader = { module = "com.google.firebase:firebase-ml-modeld
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
 androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
 androidx-media3-ui = { group = "androidx.media3", name = "media3-ui", version.ref = "media3Ui" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

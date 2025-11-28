@@ -11,6 +11,7 @@ data class PostModel(
     val authorAvatarUrl: String = "",
     val content: String = "",
     val imageUrls: List<String> = emptyList(),
+    val videoUrl: String = "",
     val createdAt: Timestamp? = null,
     val likeCount: Long = 0,
     val commentCount: Long = 0,

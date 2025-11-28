@@ -32,7 +32,6 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.uth_hub.feature.post.domain.model.CommentModel
 import com.example.uth_hub.feature.post.domain.model.PostModel
 import androidx.media3.common.util.UnstableApi
-
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -268,7 +267,7 @@ private fun SheetActionItem(
 
 // Viewer full-screen cho ảnh bình luận
 @Composable
-private fun FullscreenImageViewer(
+fun FullscreenImageViewer(
     imageUrl: String,
     onDismiss: () -> Unit
 ) {
@@ -294,7 +293,7 @@ private fun FullscreenImageViewer(
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
-private fun FullscreenVideoPlayer(
+fun FullscreenVideoPlayer(
     videoUrl: String,
     onDismiss: () -> Unit
 ) {

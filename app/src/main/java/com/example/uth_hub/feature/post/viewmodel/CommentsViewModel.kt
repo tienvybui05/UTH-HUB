@@ -43,7 +43,7 @@ class CommentsViewModel(
     private val _replyingTo = MutableStateFlow<CommentModel?>(null)
     val replyingTo: StateFlow<CommentModel?> = _replyingTo.asStateFlow()
 
-    // ==== EDIT COMMENT (NEW) ====
+    // ==== EDIT COMMENT ====
     private val _editingComment = MutableStateFlow<CommentModel?>(null)
     val editingComment: StateFlow<CommentModel?> = _editingComment.asStateFlow()
 
@@ -63,12 +63,27 @@ class CommentsViewModel(
         observeComments()
     }
 
+    // ==========================
+    // LOAD POST + TRẠNG THÁI LIKE/SAVE CỦA MÌNH
+    // ==========================
     private fun loadPost() {
         viewModelScope.launch {
             _loading.value = true
             try {
                 val p = repo.getPostById(postId)
-                _post.value = p
+                val uid = auth.currentUser?.uid
+
+                _post.value = if (p != null && uid != null) {
+                    // check Firestore xem mình đã like / save post này chưa
+                    val liked = repo.isLiked(postId, uid)
+                    val saved = repo.isSaved(postId, uid)
+                    p.copy(
+                        likedByMe = liked,
+                        savedByMe = saved
+                    )
+                } else {
+                    p
+                }
             } catch (e: Exception) {
                 _error.value = e.message
             } finally {
@@ -110,7 +125,7 @@ class CommentsViewModel(
     // ============ MEDIA ============
 
     fun setMedia(uris: List<Uri>, type: String) {
-        // 🔒 Chỉ giữ đúng 1 media (ảnh hoặc video) giống Facebook
+        //  Chỉ giữ đúng 1 media
         _commentMediaUris.value = uris.take(1)
         _commentMediaType.value = type   // "image" hoặc "video"
     }
@@ -132,7 +147,7 @@ class CommentsViewModel(
         _replyingTo.value = null
     }
 
-    // ============ EDIT COMMENT (NEW) ============
+    // ============ EDIT COMMENT ============
 
     fun startEditComment(comment: CommentModel) {
         val uid = auth.currentUser?.uid
@@ -177,43 +192,46 @@ class CommentsViewModel(
     // ============ LIKE / SAVE POST ============
 
     fun toggleLike(postId: String, postAuth: String) {
+        val current = _post.value ?: return
+        val currentlyLiked = current.likedByMe
+        val newLikeCount =
+            (current.likeCount + if (currentlyLiked) -1 else 1).coerceAtLeast(0)
+
+        //  Optimistic update giống HomeScreen
+        _post.value = current.copy(
+            likedByMe = !currentlyLiked,
+            likeCount = newLikeCount
+        )
+
         viewModelScope.launch {
             try {
                 repo.toggleLike(postId, postAuth)
-
-                val current = _post.value
-                if (current != null) {
-                    val liked = !current.likedByMe
-                    val delta = if (liked) 1 else -1
-
-                    _post.value = current.copy(
-                        likedByMe = liked,
-                        likeCount = (current.likeCount + delta).coerceAtLeast(0)
-                    )
-                }
-
             } catch (e: Exception) {
+                // lỗi -> rollback lại state cũ
                 _error.value = e.message
+                _post.value = current
             }
         }
     }
 
-
     fun toggleSave() {
+        val current = _post.value ?: return
+        val currentlySaved = current.savedByMe
+        val newSaveCount =
+            (current.saveCount + if (currentlySaved) -1 else 1).coerceAtLeast(0)
+
+        //  Optimistic update
+        _post.value = current.copy(
+            savedByMe = !currentlySaved,
+            saveCount = newSaveCount
+        )
+
         viewModelScope.launch {
             try {
                 repo.toggleSave(postId)
-                val current = _post.value
-                if (current != null) {
-                    val saved = !current.savedByMe
-                    val delta = if (saved) 1 else -1
-                    _post.value = current.copy(
-                        savedByMe = saved,
-                        saveCount = (current.saveCount + delta).coerceAtLeast(0)
-                    )
-                }
             } catch (e: Exception) {
                 _error.value = e.message
+                _post.value = current
             }
         }
     }
@@ -245,7 +263,7 @@ class CommentsViewModel(
         }
     }
 
-    // ============ SEND COMMENT (NEW LOGIC) ============
+    // ============ SEND COMMENT ============
 
     fun sendComment() {
         val text = commentText.value.trim()
