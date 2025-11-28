@@ -123,6 +123,8 @@ dependencies {
     //deeplink
     implementation("com.google.zxing:core:3.5.4")
 
-    implementation("com.google.android.exoplayer:exoplayer:2.19.1")
-    implementation("com.google.android.exoplayer:exoplayer-ui:2.19.1")
+    //media 3
+
+    implementation("androidx.media3:media3-exoplayer:1.8.0")
+    implementation("androidx.media3:media3-ui:1.3.1")
 }

@@ -31,9 +31,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.rememberAsyncImagePainter
 import com.example.uth_hub.feature.post.domain.model.CommentModel
 import com.example.uth_hub.feature.post.domain.model.PostModel
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.ui.PlayerView
+import androidx.media3.common.util.UnstableApi
+
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -293,7 +292,7 @@ private fun FullscreenImageViewer(
     }
 }
 
-// Viewer full-screen cho VIDEO bình luận (dùng ExoPlayer)
+@androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 private fun FullscreenVideoPlayer(
     videoUrl: String,
@@ -301,25 +300,37 @@ private fun FullscreenVideoPlayer(
 ) {
     val context = LocalContext.current
 
-    // Tạo ExoPlayer
-    val exoPlayer = remember(videoUrl) {
-        ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(videoUrl))
-            prepare()
-            playWhenReady = true   // auto play khi mở
+    //  ExoPlayer đời Media3
+    val exoPlayer = remember {
+        androidx.media3.exoplayer.ExoPlayer.Builder(context).build()
+    }
+
+    // Load & play video
+    LaunchedEffect(videoUrl) {
+        runCatching {
+            val mediaItem = androidx.media3.common.MediaItem.fromUri(videoUrl)
+            exoPlayer.setMediaItem(mediaItem)
+            exoPlayer.prepare()
+            exoPlayer.playWhenReady = true
+        }.onFailure {
+            // Nếu có lỗi thì dừng player để khỏi crash tiếp
+            exoPlayer.playWhenReady = false
         }
     }
 
+    // Giải phóng player khi đóng dialog
     DisposableEffect(Unit) {
         onDispose {
             exoPlayer.release()
         }
     }
 
-    Dialog(onDismissRequest = {
-        exoPlayer.playWhenReady = false
-        onDismiss()
-    }) {
+    Dialog(
+        onDismissRequest = {
+            exoPlayer.playWhenReady = false
+            onDismiss()
+        }
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -331,9 +342,13 @@ private fun FullscreenVideoPlayer(
                     .fillMaxWidth()
                     .padding(16.dp),
                 factory = { ctx ->
-                    PlayerView(ctx).apply {
+                    // ✅ PlayerView của Media3
+                    androidx.media3.ui.PlayerView(ctx).apply {
                         player = exoPlayer
-                        useController = true   // có thanh play/pause, seek, volume
+                        useController = true          // có play/pause, seekbar
+                        setShowBuffering(
+                            androidx.media3.ui.PlayerView.SHOW_BUFFERING_WHEN_PLAYING
+                        )
                     }
                 }
             )
