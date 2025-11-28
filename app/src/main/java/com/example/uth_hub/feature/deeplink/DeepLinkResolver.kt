@@ -1,16 +1,6 @@
 package com.example.uth_hub.feature.deeplink
 
 import android.net.Uri
-
-/**
- * DeepLinkResolver phân tích mọi loại link mở app vào trang cá nhân:
- *
- * 1) Custom scheme:
- *      uthhub://user/{uid}
- *
- * 2) Firebase Hosting HTTPS:
- *      https://uth-hub-49b77.web.app/user/{uid}
- */
 object DeepLinkResolver {
 
     sealed class Destination {
@@ -26,7 +16,7 @@ object DeepLinkResolver {
         val segments = uri.pathSegments
 
         // ==============================
-        // 2️⃣ FIREBASE HOSTING APP LINK
+        // FIREBASE HOSTING APP LINK
         // https://<your-domain>/user/{uid}
         // ==============================
         if (scheme == "https" &&

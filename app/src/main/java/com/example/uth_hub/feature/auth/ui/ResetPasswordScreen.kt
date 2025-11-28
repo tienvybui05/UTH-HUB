@@ -23,7 +23,7 @@ import com.example.uth_hub.feature.auth.ui.component.AuthBackground
 @Composable
 fun ResetPasswordScreen(
     onResetDone: () -> Unit,
-    onBack: (() -> Unit)? = null   // 👈 callback cho nút quay lại
+    onBack: (() -> Unit)? = null
 ) {
     val auth = FirebaseAuth.getInstance()
     val user = auth.currentUser
@@ -37,7 +37,7 @@ fun ResetPasswordScreen(
     Box(Modifier.fillMaxSize()) {
         AuthBackground()
 
-        // 🔙 Nút Back ở góc trên trái
+        // Nút Back
         IconButton(
             onClick = { onBack?.invoke() },
             modifier = Modifier
@@ -107,7 +107,7 @@ fun ResetPasswordScreen(
                         enabled = !loading
                     ) {
                         scope.launch {
-                            // ✅ Ràng buộc logic nhập
+                            // Ràng buộc logic nhập
                             when {
                                 newPw.isBlank() || confirmPw.isBlank() -> {
                                     msg = "⚠️ Vui lòng nhập đủ hai trường mật khẩu"

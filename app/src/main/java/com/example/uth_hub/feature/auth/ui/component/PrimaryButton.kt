@@ -29,7 +29,7 @@ fun PrimaryButton(
         Button(
             onClick = onClick,
             enabled = enabled,
-            shape = RoundedCornerShape(40), // bo tròn hẳn kiểu pill
+            shape = RoundedCornerShape(40),
             modifier = Modifier
                 .padding(horizontal = 40.dp)
                 .width(240.dp)

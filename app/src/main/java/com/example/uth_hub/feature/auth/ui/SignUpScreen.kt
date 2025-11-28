@@ -32,7 +32,6 @@ fun SignUpScreen(
     vm: SignUpViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    // 👇 Gán kiểu rõ ràng để tránh lỗi "Cannot infer type"
     val googleClient: GoogleSignInClient = remember { vm.googleClient(context) }
 
     val launcher = rememberLauncherForActivityResult(

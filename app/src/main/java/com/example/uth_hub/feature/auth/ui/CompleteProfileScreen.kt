@@ -81,7 +81,6 @@ fun CompleteProfileScreen(
             )
         }
 
-        // ⚡ SỬA Ở ĐÂY — DÙNG LazyColumn THAY CHO Column
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
