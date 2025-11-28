@@ -31,7 +31,9 @@ fun AdminPostItem(
     isLoading: Boolean = false
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
-    val reportCount by remember(post.id) { mutableStateOf(0) }
+    println("DEBUG AdminPostItem: Post ${post.id} - reportCount = ${post.reportCount}")
+    // SỬA: Sử dụng reportCount từ PostModel thay vì hardcode
+    val reportCount = post.reportCount
 
     // Dialog xác nhận xóa
     if (showDeleteDialog) {
@@ -75,13 +77,13 @@ fun AdminPostItem(
             .clip(shape = RoundedCornerShape(8.dp))
             .border(
                 1.dp,
-                color = if (reportCount == 0) ColorCustom.primary else Color.Red,
+                color = if (reportCount == 0L) ColorCustom.primary else Color.Red,
                 RoundedCornerShape(8.dp)
             )
             .background(
-                color = if (reportCount == 0) ColorCustom.secondBackground else Color(0xFFFFF4F4)
+                color = if (reportCount == 0L) ColorCustom.secondBackground else Color(0xFFFFF4F4)
             )
-            ,
+        ,
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // PostItem gốc - GIỮ NGUYÊN TẤT CẢ CHỨC NĂNG
@@ -98,7 +100,7 @@ fun AdminPostItem(
 
         // Thêm admin actions bên dưới
         AdminActionsFooter(
-            reportCount = reportCount,
+            reportCount = reportCount, // SỬA: Truyền reportCount từ PostModel
             isLoading = isLoading,
             onDeleteClick = { showDeleteDialog = true },
             onViewReportsClick = { onViewReports(post.id) }
@@ -108,7 +110,7 @@ fun AdminPostItem(
 
 @Composable
 private fun AdminActionsFooter(
-    reportCount: Int,
+    reportCount: Long, // SỬA: Đổi từ Int sang Long để khớp với PostModel
     isLoading: Boolean,
     onDeleteClick: () -> Unit,
     onViewReportsClick: () -> Unit
@@ -118,12 +120,12 @@ private fun AdminActionsFooter(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Report info
+        // Report info - SỬA: Hiển thị số lần báo cáo thực tế
         Text(
             text = "Bị tố cáo: $reportCount",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = ColorCustom.primary
+            color = if (reportCount > 0) Color.Red else ColorCustom.primary // SỬA: Đổi màu khi có báo cáo
         )
 
         // Action buttons

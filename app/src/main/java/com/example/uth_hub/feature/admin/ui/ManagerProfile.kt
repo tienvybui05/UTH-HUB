@@ -65,7 +65,7 @@ fun ManagerProfile(
     val ui = profileVm.ui.collectAsState().value
     val user = ui.user
     val posts by feedVm.posts.collectAsState()
-
+    val reportedCount = posts.count { it.reportCount > 0 }
     // Avatar Picker
     val avatarPicker = rememberAvatarPicker(
         onGalleryImagePicked = { uri ->
@@ -79,7 +79,7 @@ fun ManagerProfile(
     // Thống kê
     val listStatistical = listOf(
         Statistical(posts.size, "Bài viết", FontAwesomeIcons.Solid.Ghost, ColorCustom.primary),
-        Statistical(0, "Tố cáo", FontAwesomeIcons.Solid.ExclamationCircle, Color.Red)
+        Statistical(reportedCount, "Tố cáo", FontAwesomeIcons.Solid.ExclamationCircle, Color.Red)
     )
 
     Column(

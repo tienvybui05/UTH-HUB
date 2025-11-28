@@ -62,7 +62,9 @@ class FeedViewModel(
                             createdAt = d.getTimestamp("createdAt"),
                             likeCount = d.getLong("likeCount") ?: 0L,
                             commentCount = d.getLong("commentCount") ?: 0L,
-                            saveCount = d.getLong("saveCount") ?: 0L
+                            saveCount = d.getLong("saveCount") ?: 0L,
+                            // 🔥 THÊM DÒNG NÀY - reportCount bị thiếu!
+                            reportCount = d.getLong("reportCount") ?: 0L
                         )
                     } ?: emptyList()
                     trySend(Result.success(raw))
@@ -75,13 +77,12 @@ class FeedViewModel(
                     onSuccess = { list ->
                         viewModelScope.launch {
                             _posts.value = enrichWithFlags(list)
-                            _isLoading.value = false // ← Kết thúc loading khi có dữ liệu
+                            _isLoading.value = false
                         }
                     },
                     onFailure = { e ->
-                        _error.value =
-                            (e as? FirebaseFirestoreException)?.message ?: e.message
-                        _isLoading.value = false // ← Kết thúc loading khi có lỗi
+                        _error.value = (e as? FirebaseFirestoreException)?.message ?: e.message
+                        _isLoading.value = false
                     }
                 )
             }
