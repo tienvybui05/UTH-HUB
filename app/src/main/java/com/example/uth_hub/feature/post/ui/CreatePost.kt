@@ -1,7 +1,7 @@
-
 package com.example.uth_hub.feature.post.ui
 
 import android.net.Uri
+import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +52,7 @@ fun CreatePost(
     val ui by vm.ui.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     // --- Load profile hiện tại để lấy 4 biến author* ---
     val auth = remember { FirebaseAuth.getInstance() }
@@ -62,7 +65,6 @@ fun CreatePost(
     LaunchedEffect(Unit) {
         val uid = auth.currentUser?.uid
         val emailLocal = auth.currentUser?.email?.substringBefore('@') ?: "user"
-        // fallback nhanh từ FirebaseAuth
         authorName = auth.currentUser?.displayName ?: ""
         authorHandle = if (authorName.isNotBlank()) "@$emailLocal" else "@$emailLocal"
         authorAvatarUrl = auth.currentUser?.photoUrl?.toString() ?: ""
@@ -71,18 +73,17 @@ fun CreatePost(
         if (uid != null) {
             try {
                 val doc = db.collection("users").document(uid).get().await()
-                // map linh hoạt các key phổ biến trong project UTH-Hub
                 authorName = (doc.getString("displayName")
                     ?: doc.getString("name")
                     ?: authorName).trim()
                 authorHandle = (doc.getString("handle")
-                    ?: doc.getString("styleName") // nhiều nơi bạn dùng styleName
+                    ?: doc.getString("styleName")
                     ?: "@$emailLocal").trim()
                 authorInstitute = (doc.getString("institute") ?: authorInstitute).trim()
                 authorAvatarUrl = (doc.getString("photoUrl")
                     ?: doc.getString("avatarUrl")
                     ?: authorAvatarUrl).trim()
-            } catch (_: Exception) { /* giữ fallback, không crash UI */ }
+            } catch (_: Exception) { }
         }
     }
     // ---------------------------------------------------
@@ -91,8 +92,24 @@ fun CreatePost(
     val pickImages = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(maxItems = 9)
     ) { uris ->
-        pickedUris.clear()
-        pickedUris.addAll(uris)
+        pickedUris.addAll(uris)  // ← Thêm vào list hiện tại, không clear
+    }
+
+    // Camera Capture
+    val takePhoto = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            val uri = Uri.parse(
+                MediaStore.Images.Media.insertImage(
+                    context.contentResolver,
+                    bitmap,
+                    "captured_image",
+                    null
+                )
+            )
+            pickedUris.add(uri)  // ← Thêm vào list hiện tại
+        }
     }
 
     Scaffold(
@@ -162,12 +179,19 @@ fun CreatePost(
 
             Spacer(Modifier.height(16.dp))
 
-            // Icon chọn ảnh
+            // Row chọn ảnh / chụp ảnh
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Chọn ảnh từ gallery
                 IconButton(onClick = {
                     pickImages.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                 }) {
                     Icon(Icons.Outlined.Image, contentDescription = "Chọn ảnh",
+                        tint = Color(0xFF00796B), modifier = Modifier.size(28.dp))
+                }
+
+                // Chụp ảnh camera
+                IconButton(onClick = { takePhoto.launch(null) }) {
+                    Icon(Icons.Outlined.PhotoCamera, contentDescription = "Chụp ảnh",
                         tint = Color(0xFF00796B), modifier = Modifier.size(28.dp))
                 }
             }

@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.uth_hub.core.design.theme.ColorCustom
@@ -89,6 +90,7 @@ fun InstituteDropdown(
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
+            offset = if (!isAdminStyle) DpOffset(x = (-40).dp, y = 0.dp) else DpOffset(0.dp, 0.dp),
             modifier = Modifier
                 .background(Color.White)
                 .fillMaxWidth(0.9f)
