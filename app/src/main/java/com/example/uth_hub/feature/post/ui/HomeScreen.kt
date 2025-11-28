@@ -180,7 +180,7 @@ fun HomeScreen(
                 )
             }
 
-            Column(modifier = Modifier.fillMaxWidth().padding(10.dp)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(top= 10.dp, end = 10.dp,start =10.dp)) {
                 // Hiển thị skeleton khi đang loading
                 if (isLoading) {
                     LoadingSkeleton()

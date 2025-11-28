@@ -23,7 +23,6 @@ fun PostManagementTopBar(onBackClick: () -> Unit) {
             Text(
                 text = "Quản lý bài viết",
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
                 color = ColorCustom.primary
             )
         },
@@ -33,7 +32,7 @@ fun PostManagementTopBar(onBackClick: () -> Unit) {
                     imageVector = FontAwesomeIcons.Solid.ChevronLeft,
                     contentDescription = "Quay về",
                     tint = ColorCustom.primary,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(16.dp)
                 )
             }
         },

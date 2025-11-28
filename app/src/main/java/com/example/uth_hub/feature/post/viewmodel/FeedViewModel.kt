@@ -173,8 +173,10 @@ class FeedViewModel(
     }
 
     fun deletePost(postId: String) {
-        val deletedPost = _posts.value.find { it.id == postId }
-        _posts.value = _posts.value.filter { it.id != postId }
+        // Lưu toàn bộ state hiện tại để rollback
+        val currentPosts = _posts.value
+        // Filter để loại bỏ post cần xóa
+        _posts.value = currentPosts.filter { it.id != postId }
 
         viewModelScope.launch {
             try {
@@ -185,10 +187,9 @@ class FeedViewModel(
                 println("❌ Lỗi khi xóa bài viết $postId: ${e.message}")
                 e.printStackTrace()
 
-                if (deletedPost != null) {
-                    _posts.value = _posts.value + deletedPost
-                    println("🔄 Đã rollback bài viết $postId")
-                }
+                // Rollback: khôi phục state trước khi xóa
+                _posts.value = currentPosts
+                println("🔄 Đã rollback bài viết $postId")
                 _error.value = "Lỗi khi xóa bài viết: ${e.message}"
             }
         }

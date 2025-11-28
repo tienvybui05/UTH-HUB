@@ -1,9 +1,11 @@
 package com.example.uth_hub.app.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -100,7 +102,7 @@ fun NavGraph(
         NavHost(
             navController = navController,
             startDestination = startDest,
-            modifier = modifier
+            modifier = modifier.background(Color.White).padding(bottom = innerPadding.calculateBottomPadding())
         ) {
 
             // ============================
@@ -246,6 +248,7 @@ fun NavGraph(
             // ============================
             // OTHERS / ADMIN
             // ============================
+            composable(Routes.MyPostAdmin) { MyPostAdmin(navController)}
             composable(Routes.PostManagement) { PostManagement(navController) }
             composable(Routes.ManagerProfile) { ManagerProfile(navController) }
             composable(Routes.ManagerStudent) { ManagerStudent(navController) }

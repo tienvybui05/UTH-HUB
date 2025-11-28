@@ -16,6 +16,7 @@ object Routes {
     const val PostComment = "postComment"
     const val OtherProfile = "otherProfile"
 
+    const val  MyPostAdmin  ="myPostAdmin"
 
 
 }

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.uth_hub.app.navigation.Routes
+import com.example.uth_hub.feature.admin.ui.components.LoadingSkeleton
 import com.example.uth_hub.feature.post.ui.component.PostItem
 import com.example.uth_hub.feature.post.di.PostDI
 import com.example.uth_hub.feature.post.viewmodel.SavedPostsViewModel
@@ -70,12 +71,7 @@ fun SavePostScreen(navController: NavController) {
 
         when {
             loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+                LoadingSkeleton()
             }
 
             error != null -> {
@@ -108,7 +104,7 @@ fun SavePostScreen(navController: NavController) {
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(
                         top = padding.calculateTopPadding() + 8.dp,
-                        bottom = 16.dp
+                        bottom = 16.dp, end = 10.dp, start = 10.dp
                     )
                 ) {
                     items(posts, key = { it.id }) { p ->

@@ -12,9 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -40,7 +38,9 @@ import compose.icons.fontawesomeicons.Solid
 import compose.icons.fontawesomeicons.solid.ExclamationCircle
 import compose.icons.fontawesomeicons.solid.Ghost
 import compose.icons.fontawesomeicons.solid.List
+import androidx.compose.ui.graphics.vector.ImageVector
 
+// Model thống kê
 class Statistical(
     var quantity: Int,
     var title: String,
@@ -64,16 +64,19 @@ fun ManagerProfile(
 
     val ui = profileVm.ui.collectAsState().value
     val user = ui.user
-
-    val posts by feedVm.posts.collectAsState() // Lấy danh sách bài viết
+    val posts by feedVm.posts.collectAsState()
 
     // Avatar Picker
     val avatarPicker = rememberAvatarPicker(
-        onGalleryImagePicked = { uri -> uri?.let { profileVm.updateAvatarFromUri(it) } },
-        onCameraImageTaken = { bitmap -> bitmap?.let { profileVm.updateAvatarFromBitmap(it) } }
+        onGalleryImagePicked = { uri ->
+            uri?.let { profileVm.updateAvatarFromUri(it) }
+        },
+        onCameraImageTaken = { bitmap ->
+            bitmap?.let { profileVm.updateAvatarFromBitmap(it) }
+        }
     )
 
-    // Thống kê: Số bài viết thật sự, số tố cáo tạm 0
+    // Thống kê
     val listStatistical = listOf(
         Statistical(posts.size, "Bài viết", FontAwesomeIcons.Solid.Ghost, ColorCustom.primary),
         Statistical(0, "Tố cáo", FontAwesomeIcons.Solid.ExclamationCircle, Color.Red)
@@ -85,7 +88,6 @@ fun ManagerProfile(
             .background(Color.White),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         // ===== HEADER =====
         Box {
             // Background ảnh header
@@ -150,7 +152,7 @@ fun ManagerProfile(
                 }
             }
 
-            // ===== Card "Quản trị viên"  =====
+            // ===== Card "Quản trị viên" =====
             Card(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -178,10 +180,16 @@ fun ManagerProfile(
         if (showSettings) {
             SettingsSheet(
                 onDismissRequest = { showSettings = false },
-                onGoNotifications = null,
-                onGoSaved = null,
-                onGoLiked = null,
-                onGoEditInfo = null,
+
+                // Các chức năng giống sinh viên
+                onGoSaved = {
+                    showSettings = false
+                    navController.navigate(Routes.SavedPost)
+                },
+                onGoLiked = {
+                    showSettings = false
+                    navController.navigate(Routes.LikedPost)
+                },
                 onGoChangeAvatar = {
                     showSettings = false
                     showChangeAvatar = true
@@ -190,8 +198,10 @@ fun ManagerProfile(
                     showSettings = false
                     navController.navigate(Routes.ChangePassword)
                 },
-                onGoHelp = null,
-                onGoTerms = null,
+                onGoTerms = {
+                    showSettings = false
+                    navController.navigate(Routes.AboutTerms)
+                },
                 onLogout = {
                     showSettings = false
                     FirebaseAuth.getInstance().signOut()
@@ -221,7 +231,6 @@ fun ManagerProfile(
             verticalArrangement = Arrangement.spacedBy(15.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             // Thống kê
             Column(
                 modifier = Modifier
@@ -237,7 +246,6 @@ fun ManagerProfile(
                         .height(1.dp)
                         .background(Color(0x1A008689))
                 )
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -263,7 +271,6 @@ fun ManagerProfile(
                                         .size(24.dp)
                                 )
                             }
-
                             Text(
                                 "${item.quantity}",
                                 fontSize = 18.sp,
@@ -285,14 +292,13 @@ fun ManagerProfile(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Button(
-                    onClick = {  },
+                    onClick = { navController.navigate(Routes.MyPostAdmin) },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = ColorCustom.primary)
                 ) {
                     Text("Bài viết của tôi", fontSize = 16.sp)
                 }
-
                 Button(
                     onClick = { navController.navigate(Routes.PostManagement) },
                     modifier = Modifier.weight(1f),
