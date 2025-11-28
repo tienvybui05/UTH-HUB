@@ -15,6 +15,7 @@ data class PostModel(
     val likeCount: Long = 0,
     val commentCount: Long = 0,
     val saveCount: Long = 0,
+    val reportCount: Long = 0,
 
     // client-side convenience flags (không lưu Firestore)
     val likedByMe: Boolean = false,

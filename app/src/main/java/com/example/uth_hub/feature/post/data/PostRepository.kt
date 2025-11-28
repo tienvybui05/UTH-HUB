@@ -56,7 +56,9 @@ class PostRepository(
             "createdAt" to FieldValue.serverTimestamp(),
             "likeCount" to 0L,
             "commentCount" to 0L,
-            "saveCount" to 0L
+            "saveCount" to 0L,
+            // 🔹 mới: số lần bị báo cáo (cho admin xem)
+            "reportCount" to 0L
         )
         doc.set(data).await()
         return doc.id
@@ -76,6 +78,42 @@ class PostRepository(
     suspend fun isSaved(postId: String, uid: String): Boolean {
         val doc = postsCol.document(postId).collection("saves").document(uid).get().await()
         return doc.exists()
+    }
+
+    // ========================
+    // REPORT POST (BÁO CÁO VI PHẠM)
+    // ========================
+    /**
+     * Báo cáo 1 bài viết.
+     *
+     * - Lưu dấu trong subcollection: posts/{postId}/reports/{uid}
+     * - Mỗi user chỉ tăng reportCount đúng 1 lần cho mỗi post.
+     *
+     * @return true  -> lần đầu user này báo cáo post này
+     *         false -> user đã báo cáo post này trước đó, không tăng reportCount nữa
+     */
+    suspend fun reportPost(postId: String): Boolean {
+        val uid = auth.currentUser?.uid ?: throw IllegalStateException("Not logged in")
+
+        val postDoc = postsCol.document(postId)
+        val reportDoc = postDoc.collection("reports").document(uid)
+
+        return db.runTransaction { tr ->
+            val reported = tr.get(reportDoc).exists()
+
+            if (reported) {
+                // Đã từng báo cáo rồi -> không làm gì
+                false
+            } else {
+                // Lần đầu báo cáo -> tạo doc + tăng reportCount
+                tr.set(
+                    reportDoc,
+                    mapOf("createdAt" to FieldValue.serverTimestamp())
+                )
+                tr.update(postDoc, "reportCount", FieldValue.increment(1))
+                true
+            }
+        }.await()
     }
 
     // ========================
@@ -192,7 +230,9 @@ class PostRepository(
             createdAt = d.getTimestamp("createdAt"),
             likeCount = d.getLong("likeCount") ?: 0L,
             commentCount = d.getLong("commentCount") ?: 0L,
-            saveCount = d.getLong("saveCount") ?: 0L
+            saveCount = d.getLong("saveCount") ?: 0L,
+            // 🔹 map thêm reportCount từ Firestore
+            reportCount = d.getLong("reportCount") ?: 0L
         )
 
     suspend fun getPostById(postId: String): PostModel? {

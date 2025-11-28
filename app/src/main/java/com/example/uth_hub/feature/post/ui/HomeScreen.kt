@@ -76,6 +76,9 @@ fun HomeScreen(
     var selectedInstitute by remember { mutableStateOf("Tất cả khoa") }
     var expanded by remember { mutableStateOf(false) }
 
+    // 🔹 repo để gọi reportPost (tách khỏi ViewModel cho đơn giản)
+    val postRepo = remember { PostDI.providePostRepository() }
+
     val filteredPosts = remember(posts, selectedInstitute) {
         if (selectedInstitute == "Tất cả khoa") posts
         else posts.filter { it.authorInstitute == selectedInstitute }
@@ -199,7 +202,20 @@ fun HomeScreen(
                                 postModel = p,
                                 onLike = { vm.toggleLike(p.id,p.authorId) },
                                 onComment = { navController.navigate("${Routes.PostComment}/${p.id}") },
-                                onSave = { vm.toggleSave(p.id) }
+                                onSave = { vm.toggleSave(p.id) },
+                                // 🔹 Khi user bấm "Báo cáo bài viết vi phạm"
+                                onReport = {
+                                    scope.launch {
+                                        try {
+                                            val firstTime = postRepo.reportPost(p.id)
+                                            // TODO: nếu muốn, có thể hiển thị Snackbar/Toast dựa vào firstTime
+                                            // ví dụ: nếu !firstTime -> "Bạn đã báo cáo bài viết này rồi"
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                            // TODO: hiển thị thông báo lỗi nếu cần
+                                        }
+                                    }
+                                }
                             )
                         }
                     }

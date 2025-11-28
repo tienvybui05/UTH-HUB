@@ -7,28 +7,24 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,7 +33,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,9 +56,12 @@ fun PostItem(
     postModel: PostModel,
     onLike: () -> Unit,
     onComment: () -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    // callback business: chỉ được gọi sau khi user bấm "Có"
+    onReport: () -> Unit = {}
 ) {
-    var expanded = remember { mutableStateOf(false) }
+    val expanded = remember { mutableStateOf(false) }
+    val showReportDialog = remember { mutableStateOf(false) }
 
     val avatarPainter =
         if (postModel.authorAvatarUrl.isNotBlank())
@@ -105,7 +103,7 @@ fun PostItem(
                 )
                 Column {
                     Text(
-                        text = if (postModel.authorHandle.isNotBlank()) postModel.authorHandle else "@unknown",
+                        text = postModel.authorHandle.ifBlank { "@unknown" },
                         fontSize = 18.sp,
                         lineHeight = 16.sp,
                         color = ColorCustom.secondText
@@ -178,13 +176,17 @@ fun PostItem(
                             }
                         },
                         modifier = Modifier.background(color = ColorCustom.primary),
-                        onClick = { expanded.value = false }
+                        onClick = {
+                            // đóng menu -> mở dialog xác nhận
+                            expanded.value = false
+                            showReportDialog.value = true
+                        }
                     )
                 }
             }
         }
 
-        // Nội dung
+        // Nội dung text + ảnh (giữ y như bạn đang có, cắt gọn cho dễ nhìn)
         Column(modifier = Modifier.fillMaxWidth()) {
             if (postModel.content.isNotBlank()) {
                 Text(
@@ -213,7 +215,6 @@ fun PostItem(
 
                         when {
                             remaining == 1 -> {
-                                // 1 ảnh full width
                                 Image(
                                     painter = rememberAsyncImagePainter(model = imageUrls[i]),
                                     contentDescription = "Ảnh bài đăng",
@@ -226,8 +227,8 @@ fun PostItem(
                                 )
                                 i++
                             }
+
                             else -> {
-                                // 2 ảnh trên 1 hàng, cân đều
                                 Row(modifier = Modifier.fillMaxWidth()) {
                                     val end = minOf(i + 2, imageUrls.size)
                                     imageUrls.subList(i, end).forEachIndexed { index, url ->
@@ -241,7 +242,9 @@ fun PostItem(
                                                 .clip(RoundedCornerShape(12.dp))
                                                 .background(Color.LightGray)
                                         )
-                                        if (index == 0 && end - i == 2) Spacer(modifier = Modifier.width(spacing))
+                                        if (index == 0 && end - i == 2) {
+                                            Spacer(modifier = Modifier.width(spacing))
+                                        }
                                     }
                                 }
                                 i += 2
@@ -250,11 +253,6 @@ fun PostItem(
                     }
                 }
             }
-
-
-
-
-
         }
 
         // Actions: Like - Comment - Save
@@ -337,6 +335,31 @@ fun PostItem(
             }
 
             Row { /* chừa chỗ cho các action khác nếu cần */ }
+        }
+
+        // 🔹 Dialog xác nhận báo cáo
+        if (showReportDialog.value) {
+            AlertDialog(
+                onDismissRequest = { showReportDialog.value = false },
+                title = { Text("Báo cáo bài viết") },
+                text = { Text("Bạn muốn báo cáo bài viết này vi phạm?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showReportDialog.value = false
+                            // chỉ lúc này mới gọi callback business
+                            onReport()
+                        }
+                    ) {
+                        Text("Có")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showReportDialog.value = false }) {
+                        Text("Hủy")
+                    }
+                }
+            )
         }
     }
 }
