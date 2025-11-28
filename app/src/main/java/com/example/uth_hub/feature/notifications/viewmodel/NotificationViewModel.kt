@@ -23,5 +23,10 @@ class NotificationViewModel(
             }
         }
     }
+    fun deleteNotification(id: String) {
+        viewModelScope.launch {
+            repo.deleteNotification(id)
+        }
+    }
 
 }

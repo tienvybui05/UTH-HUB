@@ -47,8 +47,15 @@ class NotificationRepository(
                 trySend(list)
             }
 
+
+
         awaitClose {
             listener.remove()
         }
+    }
+    suspend fun deleteNotification(id: String) {
+        firestore.collection("notifications")
+            .document(id)
+            .delete()
     }
 }

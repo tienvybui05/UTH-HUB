@@ -79,7 +79,6 @@ fun NotificationsScreen(navController: NavController) {
                 .padding(padding)
                 .fillMaxSize()
                 .background(Color.White),
-            contentPadding = PaddingValues(bottom = 12.dp)
         ) {
 
             items(notifications) { noti ->
@@ -87,9 +86,13 @@ fun NotificationsScreen(navController: NavController) {
                     noti = noti,
                     onClick = {
                         handleNotificationClick(noti, navController)
+                    },
+                    onDelete = { id ->
+                        vm.deleteNotification(id)
                     }
                 )
             }
+
         }
     }
 }
@@ -97,7 +100,8 @@ fun NotificationsScreen(navController: NavController) {
 @Composable
 fun NotificationRow(
     noti: NotificationModel,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: (String) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -118,11 +122,12 @@ fun NotificationRow(
         Spacer(modifier = Modifier.width(8.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(timeAgo(noti.timestamp), fontSize = 12.sp, color = Color.Gray)
             Text(noti.message, fontSize = 14.sp)
+            Text(timeAgo(noti.timestamp), fontSize = 12.sp, color = Color.Gray)
+
         }
 
-        IconButton(onClick = { /* TODO delete */ }) {
+        IconButton(onClick = { onDelete(noti.id) }) {
             Icon(Icons.Filled.Delete, contentDescription = "Delete", tint = Color.Red)
         }
     }
