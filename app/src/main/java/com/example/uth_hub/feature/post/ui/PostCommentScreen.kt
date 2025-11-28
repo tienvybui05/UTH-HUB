@@ -3,6 +3,7 @@ package com.example.uth_hub.feature.post.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.uth_hub.app.navigation.Routes
@@ -32,9 +33,17 @@ fun PostCommentScreen(
     val mediaUris by vm.commentMediaUris.collectAsState()
     val mediaType by vm.commentMediaType.collectAsState()
 
+    // Đồng bộ commentCount theo số lượng comments hiện có (realtime)
+    //    -> vừa thêm / xoá comment là UI nhảy số liền, không cần reload Post.
+    val postForUi = remember(post, comments) {
+        post?.copy(
+            commentCount = comments.size.toLong()
+        )
+    }
+
     PostCommentScaffold(
-        authorName = post?.authorName ?: "",
-        post = post,
+        authorName = postForUi?.authorName ?: "",
+        post = postForUi,
         comments = comments,
         commentText = commentText,
         loading = loading,
@@ -45,6 +54,7 @@ fun PostCommentScreen(
         onCommentTextChange = vm::onCommentTextChange,
         onSendComment = vm::sendComment,
         onToggleLike = {
+            // dùng post gốc để lấy id / authorId (không phụ thuộc commentCount)
             post?.let { p ->
                 vm.toggleLike(
                     postId = p.id,

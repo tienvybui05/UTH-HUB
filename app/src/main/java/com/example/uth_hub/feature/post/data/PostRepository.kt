@@ -79,7 +79,7 @@ class PostRepository(
     }
 
     // ========================
-    // ❤️ LIKE — FIXED (có authorId)
+    //  LIKE — FIXED (có authorId)
     // ========================
     suspend fun toggleLike(postId: String, postAuthorId: String) {
         val uid = auth.currentUser?.uid ?: return
@@ -142,6 +142,7 @@ class PostRepository(
     // ========================
     // LIKE COMMENT
     // ========================
+
     suspend fun toggleCommentLike(postId: String, commentId: String) {
         val uid = auth.currentUser?.uid ?: return
 
@@ -242,8 +243,8 @@ class PostRepository(
     }
 
     // ========================
-// ADD COMMENT
-// ========================
+    // ADD COMMENT
+    // ========================
     suspend fun addComment(
         postId: String,
         text: String,
@@ -292,6 +293,7 @@ class PostRepository(
 
         db.runTransaction { tr ->
             tr.set(newCommentRef, data)
+            // mỗi comment (kể cả reply) đều +1 commentCount
             tr.update(postDoc, "commentCount", FieldValue.increment(1))
 
             if (!parentCommentId.isNullOrEmpty()) {
@@ -372,12 +374,15 @@ class PostRepository(
             if (snap.getString("authorId") != uid)
                 throw IllegalStateException("Không có quyền xoá bình luận này")
 
-            val totalDec = 1L + comment.replyCount
+            // dùng replyCount trên server cho chắc
+            val replyCountOnServer = snap.getLong("replyCount") ?: 0L
+            val totalDec = 1L + replyCountOnServer
             tr.update(postDoc, "commentCount", FieldValue.increment(-totalDec))
 
-            if (!comment.parentCommentId.isNullOrEmpty()) {
+            val parentId = snap.getString("parentCommentId")
+            if (!parentId.isNullOrEmpty()) {
                 tr.update(
-                    commentsCol.document(comment.parentCommentId!!),
+                    commentsCol.document(parentId),
                     "replyCount", FieldValue.increment(-1)
                 )
             }
@@ -387,10 +392,15 @@ class PostRepository(
 
         // XOÁ reply + likes
         commentsCol.whereEqualTo("parentCommentId", comment.id)
-            .get().await().documents.forEach { it.reference.delete() }
+            .get().await().documents.forEach { replyDoc ->
+                // xoá likes của từng reply
+                replyDoc.reference.collection("likes")
+                    .get().await().documents.forEach { it.reference.delete().await() }
+                replyDoc.reference.delete().await()
+            }
 
         commentRef.collection("likes")
-            .get().await().documents.forEach { it.reference.delete() }
+            .get().await().documents.forEach { it.reference.delete().await() }
     }
 
     // ========================

@@ -167,10 +167,10 @@ class CommentsViewModel(
 
     // ============ LIKE / SAVE POST ============
 
-    fun toggleLike(postId: String,postAuth: String) {
+    fun toggleLike(postId: String, postAuth: String) {
         viewModelScope.launch {
             try {
-                repo.toggleLike(postId,postAuth)
+                repo.toggleLike(postId, postAuth)
 
                 val current = _post.value
                 if (current != null) {
@@ -242,7 +242,7 @@ class CommentsViewModel(
         val text = commentText.value.trim()
         val medias = commentMediaUris.value
         val type = commentMediaType.value
-        val parentId = replyingTo.value?.id
+        val replyTarget = replyingTo.value
         val editing = editingComment.value
 
         // nếu đang chỉnh sửa: chỉ update text, không tạo comment mới
@@ -268,6 +268,13 @@ class CommentsViewModel(
         // Không cho gửi nếu không có text và cũng không có media
         if (text.isEmpty() && medias.isEmpty()) return
         if (_sending.value) return
+
+        // Tối đa 2 tầng: comment gốc + reply
+        val parentId: String? = when {
+            replyTarget == null -> null
+            replyTarget.parentCommentId.isNullOrEmpty() -> replyTarget.id
+            else -> replyTarget.parentCommentId
+        }
 
         viewModelScope.launch {
             _sending.value = true
